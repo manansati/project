@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Architecture of the Apple</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            /* Responsive Background Image Setup */
+            background-image: linear-gradient(rgba(4, 8, 6, 0.4), rgba(4, 8, 6, 0.4)), url('bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #f5f5f7;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 3D WebGL Canvas Layer */
+        #webgl-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Scrollable Narrative Content */
+        .content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 8%;
+        }
+
+        /* Expanded, Heavy-Duty Glassmorphism Card Panels */
+        .glass-card {
+            width: 100%;
+            max-width: 680px; /* Expanded considerably from 540px for a larger canvas footprint */
+            padding: 3.5rem;   /* Increased cushion and room around interior text blocks */
+            background: rgba(4, 8, 6, 0.45); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 32px; /* Smoother, rounder look for the larger cards */
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(102, 252, 241, 0.4);
+        }
+
+        /* Alternating layout structures */
+        section:nth-child(even) .glass-card {
+            margin-left: auto;
+        }
+
+        section:nth-child(even) {
+            text-align: right;
+        }
+
+        .tagline {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #66fcf1; 
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-size: 3.25rem; /* Rescaled slightly to sit beautifully across the wider cards */
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #a1a1a6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.15rem;
+            line-height: 1.65;
+            color: #e1e1e6; 
+        }
+
+        strong {
+            color: #ffffff;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        footer {
+            position: relative;
+            z-index: 2;
+            padding: 5rem 0;
+            text-align: center;
+            color: #86868b;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(4, 8, 6, 0.85);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Responsive Media Queries for Mobile/Tablets */
+        @media (max-width: 768px) {
+            section {
+                padding: 0 4%;
+                text-align: center !important;
+            }
+            
+            section:nth-child(even) .glass-card {
+                margin-left: 0;
+            }
+
+            .glass-card {
+                max-width: 100%;
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            p {
+                font-size: 1.05rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Engine Output Box -->
+    <div id="webgl-container"></div>
+
+    <!-- Scrollable Narrative -->
+    <div class="content">
+        <section id="intro">
+            <div class="glass-card">
+                <span class="tagline">Nature's Masterpiece</span>
+                <h1>The Anatomy of Vitality.</h1>
+                <p>Crisp, vibrant, and timeless. The humble apple is more than just a convenient snack—it is a sophisticated, fiber-rich capsule designed by nature to optimize <strong>human cellular health</strong>.</p>
+            </div>
+        </section>
+
+        <section id="cardio">
+            <div class="glass-card">
+                <span class="tagline">Cardiovascular Protection</span>
+                <h1>Shielding Your Heart.</h1>
+                <p>Apples are packed with soluble fibers like pectin, which directly aid in lowering cholesterol levels. Rich in polyphenols, regular consumption is scientifically linked to <strong>reduced blood pressure</strong> and lower stroke risks.</p>
+            </div>
+        </section>
+
+        <section id="gut">
+            <div class="glass-card">
+                <span class="tagline">Microbiome Fuel</span>
+                <h1>The Digestion Engine.</h1>
+                <p>The pectin found natively within the apple's skin acts beautifully as a <strong>prebiotic</strong>. It feeds the beneficial bacteria in your gut, improving metabolic health and strengthening your immune lining.</p>
+            </div>
+        </section>
+
+        <section id="brain">
+            <div class="glass-card">
+                <span class="tagline">Neurological Defense</span>
+                <h1>Sharpen Your Mind.</h1>
+                <p>Antioxidants like quercetin protect delicate brain cells against oxidative stress. Studies suggest that integrating apples into your daily routine helps preserve <strong>acetylcholine</strong>, defending memory function as you age.</p>
+            </div>
+        </section>
+
+        <section id="weight">
+            <div class="glass-card">
+                <span class="tagline">Sustained Clean Energy</span>
+                <h1>Naturally Balanced.</h1>
+                <p>With high water content and dense structural fibers, apples slow down sugar absorption. This delivers a steady, crash-free spike in energy while keeping you feeling full, making it the ultimate tool for <strong>weight management</strong>.</p>
+            </div>
+        </section>
+
+        <footer>
+            <p>© 2026 The Organic Apple Experience. Powered by Three.js & GSAP.</p>
+        </footer>
+    </div>
+
+    <!-- Third-party dependencies via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script>
+        // 1. Core Scene Initialization
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 6;
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // 2. Lighting Configurations
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
+        scene.add(ambientLight);
+
+        const keyLight = new THREE.DirectionalLight(0xedf9ff, 1.8);
+        keyLight.position.set(5, 7, 4);
+        scene.add(keyLight);
+
+        const rimLight = new THREE.DirectionalLight(0x66fcf1, 1.2);
+        rimLight.position.set(-5, -3, -4);
+        scene.add(rimLight);
+
+        // 3. GLTF Loader Execution
+        const loader = new THREE.GLTFLoader();
+        let appleModel;
+
+        loader.load(
+            'apple.glb', 
+            function (gltf) {
+                appleModel = gltf.scene;
+                
+                // Set initial properties based on viewport width
+                adjustModelLayout();
+                
+                scene.add(appleModel);
+                initScrollAnimations(appleModel);
+            },
+            undefined,
+            function (error) {
+                console.error('Error loading your apple.glb file:', error);
+            }
+        );
+
+        // Responsive position tracker for the 3D Apple
+        let initialX = 1.6;
+        let animXOffset = 1.7;
+
+        function adjustModelLayout() {
+            if (!appleModel) return;
+            // Desktop configuration vs. mobile
+            if (window.innerWidth <= 768) {
+                appleModel.scale.set(14, 14, 14); // Smaller on mobile viewports
+                appleModel.position.set(0, 0.8, -1);
+                initialX = 0;
+                animXOffset = 0;
+            } else {
+                // Locked into your absolute target 20, 20, 20 scale parameters
+                appleModel.scale.set(20, 20, 20);
+                appleModel.position.set(1.6, -0.4, 0); // Placed slightly further right to account for larger box margins
+                initialX = 1.6;
+                animXOffset = 1.7;
+            }
+        }
+
+        // 4. Multi-Stage Scroll Timeline Definition
+        let scrollTimeline;
+        function initScrollAnimations(model) {
+            gsap.registerPlugin(ScrollTrigger);
+
+            if (scrollTimeline) scrollTimeline.kill();
+
+            scrollTimeline = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".content",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1.2, 
+                }
+            });
+
+            // Clean choreography values designed around the (20,20,20) fruit scale
+            scrollTimeline
+                .to(model.position, { x: -animXOffset, y: -0.2, z: 0 })
+                .to(model.rotation, { x: 0.3, y: 1.2, z: 0.1 }, "<")
+                
+                .to(model.position, { x: animXOffset, y: 0.4, z: -0.5 })
+                .to(model.rotation, { x: -0.6, y: 3.2, z: -0.3 })
+                
+                .to(model.position, { x: 0, y: -0.1, z: -1 })
+                .to(model.rotation, { x: 0.1, y: 6.28, z: 0 }) 
+                
+                .to(model.position, { x: -animXOffset, y: -0.3, z: 0 })
+                .to(model.rotation, { x: 0.3, y: 7.6, z: 0.1 });
+        }
+
+        // 5. Desktop Parallax & Rendering loop
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) - 0.5;
+            mouseY = (e.clientY / window.innerHeight) - 0.5;
+        });
+
+        const animateLoop = () => {
+            if (appleModel) {
+                appleModel.rotation.y += 0.002;
+            }
+
+            targetX = mouseX * 1.1;
+            targetY = mouseY * 1.1;
+            camera.position.x += (targetX - camera.position.x) * 0.05;
+            camera.position.y += (-targetY - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animateLoop);
+        };
+
+        animateLoop();
+
+        // 6. Viewport Adaptability
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            adjustModelLayout();
+            if (appleModel) {
+                initScrollAnimations(appleModel);
+            }
+        });
+    </script>
+</body>
+</html>
