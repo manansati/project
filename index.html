@@ -65,6 +65,7 @@
       border-radius: 20px;
     }
 
+    /* ── Launch Overlay ── */
     #launch-overlay {
       position: fixed;
       inset: 0;
@@ -124,7 +125,7 @@
       min-width: 180px;
     }
 
-    .start-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(79, 195, 247, 0.45); }
+    .start-btn:hover  { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(79, 195, 247, 0.45); }
     .start-btn:active { transform: translateY(0); }
     .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -135,6 +136,7 @@
       min-height: 1.2em;
     }
 
+    /* ── Help Button ── */
     #help-btn {
       position: fixed;
       bottom: 24px;
@@ -162,6 +164,7 @@
 
     #help-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
 
+    /* ── Help Modal ── */
     #help-modal-backdrop {
       display: none;
       position: fixed;
@@ -277,6 +280,7 @@
 
     .close-btn:hover { opacity: 0.88; }
 
+    /* ── Server Down ── */
     #server-down-screen {
       display: none;
       position: fixed;
@@ -292,10 +296,7 @@
 
     #server-down-screen.active { display: flex; }
 
-    .down-icon {
-      font-size: 64px;
-      margin-bottom: 24px;
-    }
+    .down-icon  { font-size: 64px; margin-bottom: 24px; }
 
     .down-title {
       font-size: clamp(1.6rem, 5vw, 2rem);
@@ -324,6 +325,7 @@
       letter-spacing: 0.06em;
     }
 
+    /* ── Gesture HUD ── */
     #gesture-hud {
       display: none;
       position: fixed;
@@ -357,6 +359,7 @@
   <canvas id="three-canvas"></canvas>
   <video id="webcam" autoplay playsinline muted></video>
 
+  <!-- Launch Overlay -->
   <div id="launch-overlay">
     <div class="launch-card glass">
       <h1 class="title-text">God Simulator</h1>
@@ -367,6 +370,7 @@
 
   <button id="help-btn">How to Use</button>
 
+  <!-- Help Modal -->
   <div id="help-modal-backdrop">
     <div class="help-modal glass">
       <h2 class="modal-title">✋ Hand Gesture Guide</h2>
@@ -375,7 +379,7 @@
         <div class="gesture-icon">✊</div>
         <div class="gesture-info">
           <h4>FIST — Rotate Earth</h4>
-          <p>Make a full fist. Move your hand left or right to spin the planet. Freeze your fist to stop rotation instantly.</p>
+          <p>Make a full fist. Move your hand left or right to spin the planet from its current position. Rotation is relative — the Earth doesn't jump when you form the fist.</p>
         </div>
       </div>
 
@@ -383,7 +387,7 @@
         <div class="gesture-icon">☝️</div>
         <div class="gesture-info">
           <h4>INDEX ONLY — Scale Earth</h4>
-          <p>Extend only your index finger. Move left to shrink the planet, move right to expand it.</p>
+          <p>Extend only your index finger. Move right to grow, move left to shrink — relative to the size it was when you raised your finger.</p>
         </div>
       </div>
 
@@ -417,6 +421,7 @@
     </div>
   </div>
 
+  <!-- Server Down Screen -->
   <div id="server-down-screen">
     <div class="down-icon">⚠️</div>
     <h2 class="down-title">Server Down</h2>
@@ -433,40 +438,64 @@
   (function () {
     "use strict";
 
-    const NGROK_BASE = "https://arise-ovary-fretful.ngrok-free.dev";
-    const NGROK_HEADERS = {
+    /* ── Config ── */
+    var NGROK_BASE        = "https://arise-ovary-fretful.ngrok-free.dev";
+    var NGROK_HEADERS     = {
       "ngrok-skip-browser-warning": "true",
       "Content-Type": "application/json"
     };
-    const UPLOAD_INTERVAL_MS = 1000;
+    var UPLOAD_INTERVAL_MS = 1000;
 
-    const launchOverlay    = document.getElementById("launch-overlay");
-    const startBtn         = document.getElementById("start-btn");
-    const statusHint       = document.getElementById("status-hint");
-    const helpBtn          = document.getElementById("help-btn");
-    const helpBackdrop     = document.getElementById("help-modal-backdrop");
-    const closeHelpBtn     = document.getElementById("close-help-btn");
-    const serverDownScreen = document.getElementById("server-down-screen");
-    const gestureHUD       = document.getElementById("gesture-hud");
-    const webcam           = document.getElementById("webcam");
-    const canvas           = document.getElementById("three-canvas");
+    /* ── DOM refs ── */
+    var launchOverlay    = document.getElementById("launch-overlay");
+    var startBtn         = document.getElementById("start-btn");
+    var statusHint       = document.getElementById("status-hint");
+    var helpBtn          = document.getElementById("help-btn");
+    var helpBackdrop     = document.getElementById("help-modal-backdrop");
+    var closeHelpBtn     = document.getElementById("close-help-btn");
+    var serverDownScreen = document.getElementById("server-down-screen");
+    var gestureHUD       = document.getElementById("gesture-hud");
+    var webcam           = document.getElementById("webcam");
+    var canvas           = document.getElementById("three-canvas");
 
-    let simRunning     = false;
-    let autoPaused     = false;
-    let currentGesture = "DEFAULT";
-    let earth          = null;
-    let targetRotY     = 0;
-    let targetScale    = 1.0;
-    let baseScale      = 1.0;
+    /* ── State ── */
+    var simRunning     = false;
+    var autoPaused     = false;
+    var currentGesture = "DEFAULT";
+    var earth          = null;
+    var baseScale      = 1.0;
+
+    /*
+     * FIST relative rotation
+     *   fistAnchorX   : hand X when the fist gesture was first detected
+     *   fistAnchorRotY: earth rotation.y at that moment
+     *   We add the hand delta (scaled) to the anchor rotation so the earth
+     *   NEVER jumps when the fist is formed.
+     */
+    var fistAnchorX    = null;
+    var fistAnchorRotY = 0;
+
+    /*
+     * INDEX relative scale
+     *   indexAnchorX    : hand X when index-only gesture was first detected
+     *   indexAnchorScale: targetScale (in normalised units) at that moment
+     *   Moving right increases scale; left decreases — relative to entry point.
+     */
+    var indexAnchorX     = null;
+    var indexAnchorScale = 1.0;
+
+    /* Live targets that the render loop lerps toward */
+    var targetRotY   = 0;
+    var targetScale  = 1.0;
 
     /* ── Three.js Scene ── */
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
 
-    const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    var scene  = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0, 4);
 
     window.addEventListener("resize", function () {
@@ -475,16 +504,16 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    const ambientLight = new THREE.AmbientLight(0x555555);
-    scene.add(ambientLight);
+    scene.add(new THREE.AmbientLight(0x555555));
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    var sunLight = new THREE.DirectionalLight(0xffffff, 1.3);
     sunLight.position.set(5, 3, 5);
     sunLight.castShadow = true;
     scene.add(sunLight);
 
+    /* ── Starfield ── */
     (function buildStars() {
-      var COUNT = 2000;
+      var COUNT     = 2000;
       var positions = new Float32Array(COUNT * 3);
       for (var i = 0; i < COUNT; i++) {
         var idx = i * 3;
@@ -498,6 +527,7 @@
       scene.add(new THREE.Points(geo, mat));
     })();
 
+    /* ── Responsive base scale ── */
     function computeBaseScale() {
       var vmin = Math.min(window.innerWidth, window.innerHeight);
       if (vmin < 400) return 0.65;
@@ -506,6 +536,7 @@
       return 1.2;
     }
 
+    /* ── Earth Loader ── */
     function loadEarth() {
       var loader = new THREE.GLTFLoader();
       loader.load(
@@ -513,38 +544,69 @@
         function (gltf) {
           earth = gltf.scene;
 
-          var box = new THREE.Box3().setFromObject(earth);
+          /* Centre the model around the scene origin */
+          var box    = new THREE.Box3().setFromObject(earth);
           var center = new THREE.Vector3();
           box.getCenter(center);
           earth.position.sub(center);
 
-          var size = new THREE.Vector3();
+          /* Normalise so the largest axis fits within 2 units */
+          var size   = new THREE.Vector3();
           box.getSize(size);
-          var maxDim = Math.max(size.x, size.y, size.z);
+          var maxDim     = Math.max(size.x, size.y, size.z);
           var normalizer = 2.0 / maxDim;
           earth.scale.setScalar(normalizer);
 
-          baseScale  = computeBaseScale();
+          baseScale   = computeBaseScale();
           targetScale = baseScale;
           earth.scale.setScalar(normalizer * baseScale);
           earth.userData.normalizer = normalizer;
 
+          /* FIX ─ Strip every Line / LineSegments / LineLoop from the model.
+             These are the blue wireframe edges baked into many GLTF exports
+             and are invisible in the authoring tool but visible in Three.js. */
+          var toRemove = [];
           earth.traverse(function (child) {
+            /* Hide any Line-type object (edges, wireframe helpers, etc.) */
+            if (child.isLine || child.isLineSegments || child.isLineLoop) {
+              toRemove.push(child);
+              return;
+            }
+
             if (child.isMesh) {
               child.castShadow    = true;
               child.receiveShadow = true;
+
+              /* Ensure no material has wireframe accidentally enabled */
+              var mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(function (m) {
+                if (m) {
+                  m.wireframe           = false;
+                  m.wireframeLinewidth  = 0;
+                }
+              });
             }
+          });
+
+          /* Detach line children from their parents */
+          toRemove.forEach(function (obj) {
+            if (obj.parent) obj.parent.remove(obj);
           });
 
           scene.add(earth);
         },
         undefined,
         function (err) {
-          console.warn("earth.glb not found, using fallback sphere.", err);
+          console.warn("earth.glb not found – using fallback sphere.", err);
           var geo = new THREE.SphereGeometry(1, 64, 64);
-          var mat = new THREE.MeshPhongMaterial({ color: 0x1a6b9a, specular: 0x333333, shininess: 25 });
+          var mat = new THREE.MeshPhongMaterial({
+            color: 0x1a6b9a,
+            specular: 0x333333,
+            shininess: 25,
+            wireframe: false
+          });
           earth = new THREE.Mesh(geo, mat);
-          baseScale  = computeBaseScale();
+          baseScale   = computeBaseScale();
           targetScale = baseScale;
           earth.scale.setScalar(baseScale);
           earth.userData.normalizer = 1;
@@ -555,24 +617,42 @@
 
     loadEarth();
 
+    /* ── Render Loop ── */
     function animate() {
       requestAnimationFrame(animate);
 
       if (earth) {
         var norm = earth.userData.normalizer || 1;
+
         if (!simRunning) {
+          /* Idle spin before simulation starts */
           earth.rotation.y += 0.003;
+
+        } else if (currentGesture === "FIST") {
+          /*
+           * FIX ─ Relative rotation.
+           * We lerp toward targetRotY which is computed as
+           * anchorRotY ± (handDelta * sensitivity).
+           * The earth never jumps because the anchor was captured
+           * at the exact rotation the earth had when the fist formed.
+           */
+          earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotY, 0.12);
+
+        } else if (currentGesture === "INDEX_ONLY") {
+          /*
+           * FIX ─ Relative scale.
+           * targetScale was updated in onHandResults relative to the scale
+           * the earth had when the index finger was first raised.
+           * We lerp toward it smoothly; earth also auto-spins gently.
+           */
+          var curNorm  = earth.scale.x / norm;
+          var nextNorm = THREE.MathUtils.lerp(curNorm, targetScale, 0.12);
+          earth.scale.setScalar(norm * nextNorm);
+          earth.rotation.y += 0.002;
+
         } else {
-          if (currentGesture === "FIST") {
-            earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotY, 0.12);
-          } else if (currentGesture === "INDEX_ONLY") {
-            var cur = earth.scale.x / norm;
-            var next = THREE.MathUtils.lerp(cur, targetScale, 0.12);
-            earth.scale.setScalar(norm * next);
-            earth.rotation.y += 0.002;
-          } else {
-            if (!autoPaused) earth.rotation.y += 0.002;
-          }
+          /* DEFAULT – auto spin (unless space-paused) */
+          if (!autoPaused) earth.rotation.y += 0.002;
         }
       }
 
@@ -589,10 +669,10 @@
     });
 
     hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 1,
+      maxNumHands           : 1,
+      modelComplexity       : 1,
       minDetectionConfidence: 0.7,
-      minTrackingConfidence: 0.6
+      minTrackingConfidence : 0.6
     });
 
     hands.onResults(onHandResults);
@@ -601,26 +681,79 @@
       if (!simRunning) return;
 
       if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+        /* No hand – reset anchors so next gesture starts fresh */
+        fistAnchorX   = null;
+        indexAnchorX  = null;
         setGesture("DEFAULT");
         return;
       }
 
-      var lm = results.multiHandLandmarks[0];
+      var lm   = results.multiHandLandmarks[0];
+      var rawX = lm[9].x; /* palm centre X — consistent reference point */
 
       var indexFolded  = lm[8].y  > lm[5].y;
       var middleFolded = lm[12].y > lm[9].y;
       var ringFolded   = lm[16].y > lm[13].y;
       var pinkyFolded  = lm[20].y > lm[17].y;
-      var rawX = lm[9].x;
 
       if (indexFolded && middleFolded && ringFolded && pinkyFolded) {
+        /* ── FIST ── */
+
+        /* Reset index anchor whenever we switch away from index mode */
+        indexAnchorX = null;
+
+        if (fistAnchorX === null) {
+          /*
+           * First frame of fist: lock the anchor to the current hand position
+           * AND to the current rotation of the earth so there is zero jump.
+           */
+          fistAnchorX    = rawX;
+          fistAnchorRotY = earth ? earth.rotation.y : 0;
+        }
+
+        /*
+         * Compute rotation target from delta.
+         * Hand moves left  (rawX decreases) → earth rotates right (+Y).
+         * Hand moves right (rawX increases) → earth rotates left  (-Y).
+         * Sensitivity multiplier (Math.PI * 4) means a full hand sweep
+         * across the frame gives ~2 full rotations.
+         */
+        var deltaX = fistAnchorX - rawX;
+        targetRotY = fistAnchorRotY + deltaX * Math.PI * 4;
+
         setGesture("FIST");
-        targetRotY = (1 - rawX - 0.5) * Math.PI * 2;
+
       } else if (!indexFolded && middleFolded && ringFolded && pinkyFolded) {
+        /* ── INDEX ONLY ── */
+
+        /* Reset fist anchor whenever we switch away from fist mode */
+        fistAnchorX = null;
+
+        if (indexAnchorX === null) {
+          /*
+           * First frame of index: lock the anchor to the current hand position
+           * AND to the current scale so there is zero jump.
+           */
+          indexAnchorX     = rawX;
+          indexAnchorScale = targetScale; /* carry whatever scale earth has now */
+        }
+
+        /*
+         * Moving right (rawX increases) → delta is negative (rawX - anchor < 0
+         * when anchor was set at a smaller rawX)... so we flip sign:
+         * newScale = anchorScale + (rawX - anchorX) * sensitivity
+         * Moving right → rawX increases → scale increases ✓
+         * Moving left  → rawX decreases → scale decreases ✓
+         */
+        var scaleDelta = (rawX - indexAnchorX) * 3.0;
+        targetScale    = Math.max(0.3, Math.min(3.5, indexAnchorScale + scaleDelta));
+
         setGesture("INDEX_ONLY");
-        var t = 1 - rawX;
-        targetScale = baseScale * (0.5 + t * 2.5);
+
       } else {
+        /* ── DEFAULT ── */
+        fistAnchorX  = null;
+        indexAnchorX = null;
         setGesture("DEFAULT");
       }
     }
@@ -643,7 +776,7 @@
 
       try {
         var resp = await fetch(NGROK_BASE + "/ping", {
-          method: "GET",
+          method : "GET",
           headers: { "ngrok-skip-browser-warning": "true" }
         });
         if (!resp.ok) throw new Error("Non-OK ping");
@@ -660,8 +793,8 @@
         var constraints = {
           video: {
             facingMode: "user",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width : { ideal: 1280 },
+            height: { ideal: 720  }
           }
         };
         stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -692,19 +825,19 @@
         onFrame: async function () {
           await hands.send({ image: webcam });
         },
-        width: 640,
+        width : 640,
         height: 480
       });
       mpCamera.start();
     }
 
     function startUploadLoop(stream) {
-      var track = stream.getVideoTracks()[0];
+      var track    = stream.getVideoTracks()[0];
       var settings = track ? track.getSettings() : {};
-      var camW = settings.width  || webcam.videoWidth  || 640;
-      var camH = settings.height || webcam.videoHeight || 480;
+      var camW     = settings.width  || webcam.videoWidth  || 640;
+      var camH     = settings.height || webcam.videoHeight || 480;
 
-      var offCanvas = document.createElement("canvas");
+      var offCanvas   = document.createElement("canvas");
       offCanvas.width  = camW;
       offCanvas.height = camH;
       var ctx = offCanvas.getContext("2d");
@@ -718,9 +851,9 @@
           var base64Image = offCanvas.toDataURL("image/jpeg", 0.85);
 
           await fetch(NGROK_BASE + "/upload", {
-            method: "POST",
+            method : "POST",
             headers: NGROK_HEADERS,
-            body: JSON.stringify({ image: base64Image })
+            body   : JSON.stringify({ image: base64Image })
           });
         } catch (err) {
           console.warn("Frame upload failed:", err);
@@ -728,6 +861,7 @@
       }, UPLOAD_INTERVAL_MS);
     }
 
+    /* ── UI events ── */
     helpBtn.addEventListener("click", function () {
       helpBackdrop.classList.add("open");
     });
@@ -745,18 +879,22 @@
         case "h":
           helpBackdrop.classList.toggle("open");
           break;
+
         case " ":
           e.preventDefault();
           autoPaused = !autoPaused;
           break;
+
         case "r":
           if (earth) {
             earth.rotation.set(0, 0, 0);
-            baseScale  = computeBaseScale();
+            baseScale   = computeBaseScale();
             targetScale = baseScale;
-            var norm = earth.userData.normalizer || 1;
+            var norm    = earth.userData.normalizer || 1;
             earth.scale.setScalar(norm * baseScale);
-            targetRotY = 0;
+            targetRotY    = 0;
+            fistAnchorX   = null;
+            indexAnchorX  = null;
           }
           break;
       }
