@@ -1,358 +1,892 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>God Simulator</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>God Simulator</title>
 
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #010104; 
-            color: #ffffff; 
-            overflow: hidden; 
-            height: 100vh;
-            width: 100vw;
-        }
+  <!-- ═══════════════════════════════════════════════════════════════
+       DEPENDENCIES — loaded as plain global <script> tags.
+       NO ES modules, NO import maps. This prevents the bare-specifier
+       crash and mixed-content blocks on GitHub Pages.
+  ════════════════════════════════════════════════════════════════ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- GLTFLoader for r128 — injects itself into the global THREE object -->
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- MediaPipe Hands & Camera Utils -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
-        #server-down-screen {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(2, 2, 8, 0.98); z-index: 9999;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            color: #ff3333; font-size: 2.2rem; font-weight: 800; text-align: center; padding: 20px;
-            letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 20px rgba(255, 51, 51, 0.5);
-        }
+  <style>
+    /* ── Reset & Viewport Lock ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ----- PREMIUM GLASSMORPHISM UI ----- */
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 100; display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; 
-            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.1) 0%, rgba(1, 1, 4, 0.9) 100%);
-            transition: opacity 0.8s ease;
-        }
+    :root {
+      --glass-bg       : rgba(255, 255, 255, 0.02);
+      --glass-border   : rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.14);
+      --glass-blur     : 25px;
+      --accent-start   : #4fc3f7;
+      --accent-end     : #a78bfa;
+      --danger         : #ff4757;
+      --text-primary   : rgba(255, 255, 255, 0.95);
+      --text-secondary : rgba(255, 255, 255, 0.55);
+      --space          : #010104;
+    }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            border-left: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 30px;
-            padding: 60px 80px;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.02);
-            max-width: 90%;
-        }
+    html, body {
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      background: var(--space);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text-primary);
+    }
 
-        h1 { 
-            font-size: 4.2rem; font-weight: 900; letter-spacing: 8px; margin-bottom: 45px; text-transform: uppercase; 
-            background: linear-gradient(135deg, #ffffff 0%, #818cf8 50%, #4f46e5 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 4px 15px rgba(79, 70, 229, 0.3));
-        }
+    /* ── Three.js Canvas ───────────────────────────────────────────── */
+    #three-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      display: block;
+    }
 
-        .btn {
-            padding: 18px 55px; font-size: 1.15rem; font-weight: 700; border: none; border-radius: 50px;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; 
-            letter-spacing: 2px;
-        }
+    /* ── Hidden Camera Feed ────────────────────────────────────────── */
+    #webcam {
+      position: fixed;
+      top: 0; left: 0;
+      width: 1px; height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
 
-        #btn-start { 
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.8) 0%, rgba(99, 102, 241, 0.8) 100%); 
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            color: white; border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4), inset 0 2px 5px rgba(255,255,255,0.3); 
-        }
-        #btn-start:hover { 
-            transform: translateY(-4px); 
-            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6), inset 0 2px 5px rgba(255,255,255,0.4); 
-            background: linear-gradient(135deg, rgba(79, 70, 229, 1) 0%, rgba(99, 102, 241, 1) 100%);
-        }
+    /* ── Glass Panel Mixin ─────────────────────────────────────────── */
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+      border-top-color: var(--glass-highlight);
+      border-left-color: var(--glass-highlight);
+      border-radius: 20px;
+    }
 
-        #btn-help { 
-            position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); 
-            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1; z-index: 110; padding: 14px 40px; border-radius: 50px;
-            font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        #btn-help:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.25); color: #fff; }
-        
-        #help-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(10, 11, 28, 0.5); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
-            border: 1px solid rgba(255, 255, 255, 0.15); border-top: 1px solid rgba(255,255,255,0.3);
-            border-radius: 30px; padding: 45px; width: 90%; max-width: 550px; z-index: 200; display: none;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
-        }
-        #help-modal h3 { margin-bottom: 25px; color: #a5b4fc; font-size: 1.8rem; letter-spacing: 1px; }
-        #help-modal p { margin-bottom: 22px; line-height: 1.7; color: #e2e8f0; font-size: 1.05rem;}
-        .close-btn { 
-            background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); 
-            color: #fca5a5; float: right; padding: 12px 30px; border-radius: 50px; backdrop-filter: blur(10px);
-        }
-        .close-btn:hover { background: rgba(239, 68, 68, 0.4); color: white; border-color: rgba(239, 68, 68, 0.6); }
+    /* ══════════════════════════════════════════════════════════════
+       LAUNCH OVERLAY
+    ══════════════════════════════════════════════════════════════ */
+    #launch-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 60%,
+        rgba(79, 195, 247, 0.06) 0%,
+        rgba(1, 1, 4, 0.94) 70%);
+      transition: opacity 0.6s ease;
+    }
 
-        /* Hidden Webcam & Canvas setup */
-        #webcam { 
-            position: absolute; top: 0; left: 0; width: 1px; height: 1px; 
-            opacity: 0; pointer-events: none; z-index: -100; /* Completely hidden but functionally active */
-        }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top:0; left:0; z-index: 1; outline: none; }
-        
-        #debug-log { position: fixed; top: 10px; left: 10px; width: 300px; max-height: 100px; background: rgba(0,0,0,0.8); color: #ff5555; font-family: monospace; font-size: 11px; padding: 10px; z-index: 10000; border-radius: 5px; display: none; overflow-y: auto; pointer-events: none; }
-    </style>
+    #launch-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .launch-card {
+      max-width: 480px;
+      width: 90vw;
+      padding: 52px 44px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle animated aurora behind the card */
+    .launch-card::before {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      background: conic-gradient(
+        from 0deg at 50% 50%,
+        transparent 0deg,
+        rgba(79, 195, 247, 0.07) 60deg,
+        transparent 120deg,
+        rgba(167, 139, 250, 0.07) 180deg,
+        transparent 240deg,
+        rgba(79, 195, 247, 0.04) 300deg,
+        transparent 360deg
+      );
+      animation: auroraRotate 8s linear infinite;
+      border-radius: inherit;
+      z-index: -1;
+    }
+
+    @keyframes auroraRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    .god-symbol {
+      font-size: 56px;
+      line-height: 1;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 0 18px rgba(79, 195, 247, 0.5));
+      animation: symbolPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes symbolPulse {
+      0%, 100% { filter: drop-shadow(0 0 18px rgba(79, 195, 247, 0.5)); }
+      50%       { filter: drop-shadow(0 0 32px rgba(167, 139, 250, 0.7)); }
+    }
+
+    .title-text {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle-text {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    .start-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 44px;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      border: none;
+      border-radius: 50px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 8px 32px rgba(79, 195, 247, 0.3);
+    }
+
+    .start-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.2s;
+      border-radius: inherit;
+    }
+
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px rgba(79, 195, 247, 0.45);
+    }
+
+    .start-btn:hover::after { background: rgba(255,255,255,0.08); }
+    .start-btn:active { transform: translateY(0); }
+
+    .status-hint {
+      margin-top: 20px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      min-height: 1.2em;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       BOTTOM HELP BUTTON (always visible during simulation)
+    ══════════════════════════════════════════════════════════════ */
+    #help-btn {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: none;        /* shown after sim starts */
+      padding: 11px 28px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+      border-top-color: var(--glass-highlight);
+      border-radius: 50px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    #help-btn:hover {
+      color: var(--text-primary);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       HOW-TO-USE MODAL
+    ══════════════════════════════════════════════════════════════ */
+    #help-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(1, 1, 4, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #help-modal-backdrop.open {
+      display: flex;
+    }
+
+    .help-modal {
+      max-width: 520px;
+      width: 90vw;
+      padding: 40px 36px 36px;
+      position: relative;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 26px;
+    }
+
+    .gesture-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .gesture-icon {
+      font-size: 2rem;
+      line-height: 1;
+      flex-shrink: 0;
+      width: 48px;
+      text-align: center;
+      filter: drop-shadow(0 0 8px rgba(79, 195, 247, 0.4));
+    }
+
+    .gesture-info h4 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .gesture-info p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--glass-border);
+      margin: 22px 0;
+    }
+
+    .manual-section h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .key-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    kbd {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .key-desc { font-size: 0.82rem; color: var(--text-secondary); }
+
+    .close-btn {
+      margin-top: 28px;
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .close-btn:hover { opacity: 0.88; }
+
+    /* ══════════════════════════════════════════════════════════════
+       SERVER DOWN OVERLAY
+    ══════════════════════════════════════════════════════════════ */
+    #server-down-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(1, 1, 4, 0.97);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 32px;
+    }
+
+    #server-down-screen.active {
+      display: flex;
+    }
+
+    .down-icon {
+      font-size: 72px;
+      margin-bottom: 28px;
+      animation: shake 0.5s ease infinite alternate;
+    }
+
+    @keyframes shake {
+      from { transform: rotate(-4deg) scale(1); }
+      to   { transform: rotate(4deg)  scale(1.06); }
+    }
+
+    .down-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--danger);
+      margin-bottom: 14px;
+      text-shadow: 0 0 30px rgba(255, 71, 87, 0.5);
+    }
+
+    .down-sub {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      max-width: 360px;
+      line-height: 1.6;
+    }
+
+    .down-badge {
+      margin-top: 28px;
+      display: inline-block;
+      padding: 10px 24px;
+      border: 1px solid var(--danger);
+      border-radius: 50px;
+      color: var(--danger);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       HUD — gesture indicator (top-right, shown during sim)
+    ══════════════════════════════════════════════════════════════ */
+    #gesture-hud {
+      display: none;
+      position: fixed;
+      top: 24px;
+      right: 28px;
+      z-index: 50;
+      padding: 10px 20px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+      border-top-color: var(--glass-highlight);
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+
+    #gesture-hud.active-gesture {
+      color: var(--accent-start);
+      border-color: rgba(79, 195, 247, 0.3);
+    }
+  </style>
 </head>
 <body>
 
-    <div id="debug-log"></div>
-    <div id="server-down-screen">Server Down<br><span style="font-size: 1rem; color: #fca5a5; margin-top: 10px; display: block;">Please Contact Manan</span></div>
+  <!-- ── Three.js Canvas ──────────────────────────────────────────── -->
+  <canvas id="three-canvas"></canvas>
 
-    <div id="ui-layer">
-        <div class="glass-panel">
-            <h1>God Simulator</h1>
-            <button id="btn-start" class="btn">Start Simulator</button>
+  <!-- ── Hidden Webcam Video ──────────────────────────────────────── -->
+  <video id="webcam" autoplay playsinline muted></video>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       LAUNCH OVERLAY
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="launch-overlay">
+    <div class="launch-card glass">
+      <div class="god-symbol">🌍</div>
+      <h1 class="title-text">God Simulator</h1>
+      <p class="subtitle-text">Hand-Gesture Earth Control</p>
+      <button class="start-btn" id="start-btn">
+        ⚡ Start Simulator
+      </button>
+      <p class="status-hint" id="status-hint">Awaiting your command…</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BOTTOM HELP BUTTON
+  ═══════════════════════════════════════════════════════════════ -->
+  <button id="help-btn">☰ How to Use</button>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       HOW-TO-USE MODAL
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="help-modal-backdrop">
+    <div class="help-modal glass">
+      <h2 class="modal-title">✋ Hand Gesture Guide</h2>
+
+      <div class="gesture-row">
+        <div class="gesture-icon">✊</div>
+        <div class="gesture-info">
+          <h4>FIST — Rotate Earth</h4>
+          <p>Make a full fist. Move your hand left/right to spin the planet. Freeze your fist to stop rotation instantly.</p>
         </div>
+      </div>
+
+      <div class="gesture-row">
+        <div class="gesture-icon">☝️</div>
+        <div class="gesture-info">
+          <h4>INDEX ONLY — Scale Earth</h4>
+          <p>Extend only your index finger. Move left to shrink the planet (0.6×), move right to expand it (3×).</p>
+        </div>
+      </div>
+
+      <div class="gesture-row">
+        <div class="gesture-icon">🖐️</div>
+        <div class="gesture-info">
+          <h4>DEFAULT — Auto Spin</h4>
+          <p>Any other gesture or no hand detected: Earth rotates automatically at a slow, steady pace.</p>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="manual-section">
+        <h4>Keyboard Controls</h4>
+        <div class="key-row">
+          <kbd>H</kbd>
+          <span class="key-desc">Toggle this help panel</span>
+        </div>
+        <div class="key-row">
+          <kbd>Space</kbd>
+          <span class="key-desc">Pause / resume auto-spin</span>
+        </div>
+        <div class="key-row">
+          <kbd>R</kbd>
+          <span class="key-desc">Reset Earth scale &amp; rotation</span>
+        </div>
+      </div>
+
+      <button class="close-btn" id="close-help-btn">Close</button>
     </div>
+  </div>
 
-    <button id="btn-help" class="btn">How to Use</button>
+  <!-- ══════════════════════════════════════════════════════════════
+       SERVER DOWN SCREEN
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="server-down-screen">
+    <div class="down-icon">⚠️</div>
+    <h2 class="down-title">Server Down</h2>
+    <p class="down-sub">
+      The backend could not be reached. Please ensure your local Flask server
+      is running and the ngrok tunnel is active.
+    </p>
+    <span class="down-badge">Please Contact Manan</span>
+  </div>
 
-    <div id="help-modal">
-        <h3>Manual Controls</h3>
-        <p><strong>1. Fist Rotation (Y-Axis):</strong> Make a closed fist and move it horizontally across the screen to rotate the Earth. Hold it still to freeze the model in place.</p>
-        <p><strong>2. Index Finger Scaling:</strong> Raise only your index finger. Move your hand left to shrink the Earth, or right to expand its scale dynamically.</p>
-        <p><em>Note: Other gestures let the Earth resume its natural rotation pattern.</em></p>
-        <button class="close-btn btn" id="btn-close-help">Close</button>
-    </div>
+  <!-- ── Gesture HUD ───────────────────────────────────────────────── -->
+  <div id="gesture-hud">No Hand</div>
 
-    <video id="webcam" autoplay playsinline></video>
-    <div id="canvas-container"></div>
+  <!-- ══════════════════════════════════════════════════════════════
+       MAIN SCRIPT
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    "use strict";
 
-    <script>
-        // Diagnostic fallback
-        window.onerror = function(msg, url, line) {
-            const logBox = document.getElementById('debug-log');
-            logBox.style.display = 'block';
-            logBox.innerHTML += `Err: ${msg} (Line ${line})<br>`;
-            return false;
-        };
+    /* ── Config ──────────────────────────────────────────────────── */
+    const NGROK_BASE = "https://arise-ovary-fretful.ngrok-free.dev";
+    const NGROK_HEADERS = {
+      "ngrok-skip-browser-warning": "true",
+      "Content-Type": "application/json"
+    };
+    const UPLOAD_INTERVAL_MS = 1000;
+    const CAM_W = 640, CAM_H = 480;
 
-        const BACKEND_URL = "https://arise-ovary-fretful.ngrok-free.dev";
-        let scene, camera, renderer, earth, hands, cameraUtilsInstance;
-        let video = document.getElementById("webcam");
-        let isRunning = false;
+    /* ── DOM Refs ────────────────────────────────────────────────── */
+    const launchOverlay   = document.getElementById("launch-overlay");
+    const startBtn        = document.getElementById("start-btn");
+    const statusHint      = document.getElementById("status-hint");
+    const helpBtn         = document.getElementById("help-btn");
+    const helpBackdrop    = document.getElementById("help-modal-backdrop");
+    const closeHelpBtn    = document.getElementById("close-help-btn");
+    const serverDownScreen= document.getElementById("server-down-screen");
+    const gestureHUD      = document.getElementById("gesture-hud");
+    const webcam          = document.getElementById("webcam");
+    const canvas          = document.getElementById("three-canvas");
 
-        const btnStart = document.getElementById('btn-start');
-        const uiLayer = document.getElementById('ui-layer');
-        const serverDownScreen = document.getElementById('server-down-screen');
-        const modal = document.getElementById('help-modal');
+    /* ── State ───────────────────────────────────────────────────── */
+    let simRunning   = false;
+    let autoPaused   = false;
+    let currentGesture = "DEFAULT";
 
-        document.getElementById('btn-help').addEventListener('click', function() { modal.style.display = 'block'; });
-        document.getElementById('btn-close-help').addEventListener('click', function() { modal.style.display = 'none'; });
+    // Earth Three.js state
+    let earth          = null;
+    let targetRotY     = 0;
+    let targetScale    = 1.0;
 
-        async function startSimulator() {
-            try {
-                const response = await fetch(`${BACKEND_URL}/ping`, { 
-                    method: 'GET',
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
-                });
-                if (!response.ok) throw new Error("Offline");
-            } catch (err) {
-                showServerDown();
-                return;
+    /* ════════════════════════════════════════════════════════════
+       1.  THREE.JS SCENE BOOTSTRAP
+    ══════════════════════════════════════════════════════════ */
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 3.5);
+
+    // Resize handler — recalculates aspect to prevent planetary distortion
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ── Lighting ────────────────────────────────────────────────── */
+    const ambientLight = new THREE.AmbientLight(0x555555);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    sunLight.position.set(5, 3, 5);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+
+    /* ── Starfield ───────────────────────────────────────────────── */
+    (function buildStars() {
+      const COUNT = 2000;
+      const positions = new Float32Array(COUNT * 3);
+      for (let i = 0; i < COUNT; i++) {
+        const idx = i * 3;
+        positions[idx]     = (Math.random() - 0.5) * 80;  // X: wide spread
+        positions[idx + 1] = (Math.random() - 0.5) * 80;  // Y: wide spread
+        // Z: strictly deep (between -5 and -30) so stars never clip the planet
+        positions[idx + 2] = -(Math.random() * 25 + 5);
+      }
+      const geo  = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const mat  = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true });
+      scene.add(new THREE.Points(geo, mat));
+    })();
+
+    /* ── Earth GLB Loader ────────────────────────────────────────── */
+    function loadEarth() {
+      const loader = new THREE.GLTFLoader();
+      loader.load(
+        "earth.glb",
+        function (gltf) {
+          earth = gltf.scene;
+
+          // Centre the mesh around the scene origin using bounding-box math
+          const box    = new THREE.Box3().setFromObject(earth);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          earth.position.sub(center);   // offset so mass = (0,0,0)
+
+          earth.traverse(function (child) {
+            if (child.isMesh) {
+              child.castShadow    = true;
+              child.receiveShadow = true;
             }
+          });
 
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-                video.srcObject = stream;
-            } catch (err) {
-                alert("Camera permission access rejected.");
-                return;
-            }
-
-            // Smoothly fade out the Glass UI
-            uiLayer.style.opacity = '0';
-            setTimeout(() => { uiLayer.style.display = 'none'; }, 800);
-            
-            // Note: Video element display logic removed, it remains opacity: 0
-            isRunning = true;
-            
-            initMediaPipe();
-            startPhotoPipeline();
+          scene.add(earth);
+        },
+        undefined,
+        function (err) {
+          console.warn("[GLTFLoader] earth.glb not found — using procedural fallback.", err);
+          // Procedural Earth sphere fallback so the sim still works without the asset
+          const geo  = new THREE.SphereGeometry(1, 64, 64);
+          const mat  = new THREE.MeshPhongMaterial({
+            color: 0x1a6b9a,
+            specular: 0x333333,
+            shininess: 25
+          });
+          earth = new THREE.Mesh(geo, mat);
+          scene.add(earth);
         }
+      );
+    }
 
-        function showServerDown() {
-            serverDownScreen.style.display = 'flex';
-            uiLayer.style.display = 'none';
-            isRunning = false;
+    loadEarth();
+
+    /* ── Render Loop ─────────────────────────────────────────────── */
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (earth) {
+        if (!simRunning) {
+          // Idle gentle spin while on launch screen
+          earth.rotation.y += 0.002;
+        } else {
+          switch (currentGesture) {
+            case "FIST":
+              // Lerp toward target set by hand X position
+              earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotY, 0.15);
+              break;
+
+            case "INDEX_ONLY":
+              // Lerp scale toward hand-mapped target
+              earth.scale.setScalar(
+                THREE.MathUtils.lerp(earth.scale.x, targetScale, 0.15)
+              );
+              // Continue gentle auto-spin while scaling
+              earth.rotation.y += 0.002;
+              break;
+
+            case "DEFAULT":
+            default:
+              if (!autoPaused) earth.rotation.y += 0.002;
+              break;
+          }
         }
+      }
 
-        // Initialize 3D Scene
-        function initThree() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 6;
+      renderer.render(scene, camera);
+    }
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
+    animate();
 
-            scene.add(new THREE.AmbientLight(0x555555));
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.3);
-            sunLight.position.set(5, 3, 5);
-            scene.add(sunLight);
+    /* ════════════════════════════════════════════════════════════
+       2.  MEDIAPIPE HANDS SETUP
+    ══════════════════════════════════════════════════════════ */
+    const hands = new Hands({
+      locateFile: function (file) {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+      }
+    });
 
-            // FIXED BACKGROUND STARS (Forcing Z-axis far behind the earth)
-            const starsGeometry = new THREE.BufferGeometry();
-            const starsCount = 2000;
-            const starPositions = new Float32Array(starsCount * 3);
-            for(let i = 0; i < starsCount * 3; i += 3) {
-                starPositions[i] = (Math.random() - 0.5) * 40;       // X spread
-                starPositions[i+1] = (Math.random() - 0.5) * 40;     // Y spread
-                starPositions[i+2] = - (Math.random() * 25) - 5;     // Z depth (Always behind Earth: between -5 and -30)
-            }
-            starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-            const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.03, transparent: true, opacity: 0.8 });
-            const starField = new THREE.Points(starsGeometry, starsMaterial);
-            scene.add(starField);
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.6
+    });
 
-            const loader = new THREE.GLTFLoader();
-            loader.load('./earth.glb', function(gltf) {
-                earth = gltf.scene;
+    hands.onResults(onHandResults);
 
-                // MATHEMATICAL CENTERING: Forces the bounding box to perfectly align to scene origin (0,0,0)
-                const box = new THREE.Box3().setFromObject(earth);
-                const center = box.getCenter(new THREE.Vector3());
-                earth.position.x += (earth.position.x - center.x);
-                earth.position.y += (earth.position.y - center.y);
-                earth.position.z += (earth.position.z - center.z);
+    function onHandResults(results) {
+      if (!simRunning) return;
 
-                earth.scale.set(1.8, 1.8, 1.8);
-                scene.add(earth);
-            }, undefined, function(error) {
-                console.error("Asset loading fault:", error);
-            });
+      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+        setGesture("DEFAULT");
+        return;
+      }
 
-            window.addEventListener('resize', onWindowResize);
+      const lm = results.multiHandLandmarks[0];
+
+      // ── Finger fold detection (tip Y > MCP Y  →  finger is folded) ──
+      const indexFolded  = lm[8].y  > lm[5].y;
+      const middleFolded = lm[12].y > lm[9].y;
+      const ringFolded   = lm[16].y > lm[13].y;
+      const pinkyFolded  = lm[20].y > lm[17].y;
+
+      const rawX = lm[9].x;   // palm centre horizontal
+
+      if (indexFolded && middleFolded && ringFolded && pinkyFolded) {
+        // ── FIST — Rotation Mode ──────────────────────────────────
+        setGesture("FIST");
+        targetRotY = (1 - rawX - 0.5) * Math.PI * 2;
+
+      } else if (!indexFolded && middleFolded && ringFolded && pinkyFolded) {
+        // ── INDEX ONLY — Scale Mode ───────────────────────────────
+        setGesture("INDEX_ONLY");
+        const t = 1 - rawX;                      // 0 (left) … 1 (right)
+        targetScale = 0.6 + t * (3.0 - 0.6);     // map to [0.6, 3.0]
+
+      } else {
+        setGesture("DEFAULT");
+      }
+    }
+
+    function setGesture(g) {
+      currentGesture = g;
+      const labels = {
+        FIST       : "✊  Rotate Mode",
+        INDEX_ONLY : "☝️  Scale Mode",
+        DEFAULT    : "🖐️  Auto Spin"
+      };
+      gestureHUD.textContent = labels[g] || "—";
+      gestureHUD.classList.toggle("active-gesture", g !== "DEFAULT");
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       3.  SINGLE-CLICK INIT PIPELINE
+    ══════════════════════════════════════════════════════════ */
+    startBtn.addEventListener("click", async function () {
+      startBtn.disabled = true;
+      statusHint.textContent = "🔍 Pinging server…";
+
+      /* ── Step 1: Health Check ──────────────────────────────────── */
+      try {
+        const resp = await fetch(NGROK_BASE + "/ping", {
+          method: "GET",
+          headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        if (!resp.ok) throw new Error("Non-OK ping response");
+      } catch (err) {
+        console.error("[PING] Server unreachable:", err);
+        serverDownScreen.classList.add("active");
+        return;
+      }
+
+      statusHint.textContent = "📷 Requesting camera…";
+
+      /* ── Step 2: Camera Capture ────────────────────────────────── */
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: CAM_W, height: CAM_H }
+        });
+        webcam.srcObject = stream;
+        await new Promise(res => { webcam.onloadedmetadata = res; });
+      } catch (err) {
+        console.error("[CAMERA] Permission denied:", err);
+        statusHint.textContent = "❌ Camera access denied.";
+        startBtn.disabled = false;
+        return;
+      }
+
+      /* ── Step 3: Fade Out Overlay & Start Loops ────────────────── */
+      statusHint.textContent = "✅ Launching…";
+      launchOverlay.classList.add("fade-out");
+      setTimeout(() => { launchOverlay.style.display = "none"; }, 650);
+
+      helpBtn.style.display    = "block";
+      gestureHUD.style.display = "block";
+      simRunning = true;
+
+      startMediaPipe();
+      startUploadLoop(stream);
+    });
+
+    /* ════════════════════════════════════════════════════════════
+       4.  MEDIAPIPE CAMERA WRAPPER
+    ══════════════════════════════════════════════════════════ */
+    function startMediaPipe() {
+      const mpCamera = new Camera(webcam, {
+        onFrame: async function () {
+          await hands.send({ image: webcam });
+        },
+        width: CAM_W,
+        height: CAM_H
+      });
+      mpCamera.start();
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       5.  BACKGROUND FRAME UPLOAD LOOP
+    ══════════════════════════════════════════════════════════ */
+    function startUploadLoop() {
+      // Off-screen canvas for frame extraction
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width  = CAM_W;
+      offCanvas.height = CAM_H;
+      const ctx = offCanvas.getContext("2d");
+
+      setInterval(async function () {
+        if (!simRunning) return;
+
+        try {
+          // Draw current webcam frame into off-screen canvas
+          ctx.drawImage(webcam, 0, 0, CAM_W, CAM_H);
+          const base64Image = offCanvas.toDataURL("image/jpeg", 0.7);
+
+          await fetch(NGROK_BASE + "/upload", {
+            method: "POST",
+            headers: NGROK_HEADERS,
+            body: JSON.stringify({ image: base64Image })
+          });
+        } catch (err) {
+          // Silent fail — don't interrupt the simulation
+          console.warn("[UPLOAD] Frame upload failed:", err);
         }
+      }, UPLOAD_INTERVAL_MS);
+    }
 
-        // Initialize Tracking
-        function initMediaPipe() {
-            hands = new Hands({
-                locateFile: function(file) {
-                    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-                }
-            });
+    /* ════════════════════════════════════════════════════════════
+       6.  UI CONTROLS
+    ══════════════════════════════════════════════════════════ */
 
-            hands.setOptions({
-                maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
+    // Help Modal
+    helpBtn.addEventListener("click", () => {
+      helpBackdrop.classList.add("open");
+    });
+    closeHelpBtn.addEventListener("click", () => {
+      helpBackdrop.classList.remove("open");
+    });
+    helpBackdrop.addEventListener("click", (e) => {
+      if (e.target === helpBackdrop) helpBackdrop.classList.remove("open");
+    });
 
-            hands.onResults(onHandResults);
+    // Keyboard shortcuts
+    window.addEventListener("keydown", function (e) {
+      switch (e.key.toLowerCase()) {
+        case "h":
+          helpBackdrop.classList.toggle("open");
+          break;
+        case " ":
+          e.preventDefault();
+          autoPaused = !autoPaused;
+          break;
+        case "r":
+          if (earth) {
+            earth.rotation.set(0, 0, 0);
+            earth.scale.setScalar(1);
+            targetScale = 1.0;
+            targetRotY  = 0;
+          }
+          break;
+      }
+    });
 
-            cameraUtilsInstance = new Camera(video, {
-                onFrame: async function() {
-                    if (isRunning) {
-                        await hands.send({ image: video });
-                    }
-                },
-                width: 640,
-                height: 480
-            });
-            cameraUtilsInstance.start();
-        }
-
-        function onHandResults(results) {
-            if (!isRunning || !earth) return;
-
-            let currentGesture = 'DEFAULT';
-
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const landmarks = results.multiHandLandmarks[0];
-                
-                const indexFolded = landmarks[8].y > landmarks[5].y;
-                const middleFolded = landmarks[12].y > landmarks[9].y;
-                const ringFolded = landmarks[16].y > landmarks[13].y;
-                const pinkyFolded = landmarks[20].y > landmarks[17].y;
-
-                if (indexFolded && middleFolded && ringFolded && pinkyFolded) currentGesture = 'FIST';
-                else if (!indexFolded && middleFolded && ringFolded && pinkyFolded) currentGesture = 'INDEX_ONLY';
-
-                const rawX = landmarks[9].x; 
-
-                if (currentGesture === 'FIST') {
-                    const targetRotationY = (1 - rawX - 0.5) * Math.PI * 2;
-                    earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotationY, 0.15);
-                } 
-                else if (currentGesture === 'INDEX_ONLY') {
-                    const targetScale = 0.6 + (1 - rawX) * 2.4;
-                    const lerpScale = THREE.MathUtils.lerp(earth.scale.x, targetScale, 0.15);
-                    earth.scale.set(lerpScale, lerpScale, lerpScale);
-                }
-            }
-
-            if (currentGesture === 'DEFAULT') {
-                earth.rotation.y += 0.002;
-            }
-        }
-
-        function animateLoop() {
-            requestAnimationFrame(animateLoop);
-            if (earth && !isRunning) {
-                earth.rotation.y += 0.002;
-            }
-            if (renderer && scene && camera) {
-                renderer.render(scene, camera);
-            }
-        }
-
-        function startPhotoPipeline() {
-            setInterval(function() {
-                if (!isRunning) return;
-
-                const captureCanvas = document.createElement("canvas");
-                captureCanvas.width = video.videoWidth || 640;
-                captureCanvas.height = video.videoHeight || 480;
-                const ctx = captureCanvas.getContext("2d");
-                ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-                
-                const base64Image = captureCanvas.toDataURL("image/jpeg", 0.7);
-
-                fetch(`${BACKEND_URL}/upload`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    body: JSON.stringify({ image: base64Image })
-                }).catch(function() {
-                    showServerDown();
-                });
-            }, 1000);
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        btnStart.addEventListener('click', startSimulator);
-        
-        initThree();
-        animateLoop();
-    </script>
+  })();
+  </script>
 </body>
 </html>
