@@ -47,10 +47,8 @@
 
     #webcam {
       position: fixed;
-      top: -9999px;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
+      top: -9999px; left: -9999px;
+      width: 1px; height: 1px;
       opacity: 0;
       pointer-events: none;
     }
@@ -64,6 +62,49 @@
       border-left-color: var(--glass-highlight);
       border-radius: 20px;
     }
+
+    /* ════════════════════════════════════════════
+       UNIVERSAL BUTTON STYLE — boton-elegante
+       Every interactive button uses this base.
+    ════════════════════════════════════════════ */
+    .boton-elegante {
+      padding: 15px 30px;
+      border: 2px solid #2c2c2c;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      border-radius: 30px;
+      transition: all 0.4s ease;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      -webkit-appearance: none;
+      white-space: nowrap;
+    }
+
+    .boton-elegante::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0) 70%
+      );
+      transform: scale(0);
+      transition: transform 0.5s ease;
+    }
+
+    .boton-elegante:hover::after { transform: scale(4); }
+    .boton-elegante:hover        { border-color: #666666; background: #292929; }
+    .boton-elegante:disabled     { opacity: 0.45; cursor: not-allowed; }
 
     /* ── Launch Overlay ── */
     #launch-overlay {
@@ -89,7 +130,6 @@
       width: 88vw;
       padding: 48px 40px 44px;
       text-align: center;
-      position: relative;
     }
 
     .title-text {
@@ -100,69 +140,52 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 32px;
+      margin-bottom: 36px;
     }
 
-    .start-btn {
-      display: inline-flex;
+    /* Button stack on the home card */
+    .launch-btns {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 16px 44px;
-      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-      border: none;
-      border-radius: 50px;
-      color: #fff;
-      font-size: clamp(0.9rem, 3vw, 1rem);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 8px 32px rgba(79, 195, 247, 0.3);
-      -webkit-appearance: none;
-      touch-action: manipulation;
-      min-height: 52px;
-      min-width: 180px;
+      gap: 14px;
     }
 
-    .start-btn:hover  { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(79, 195, 247, 0.45); }
-    .start-btn:active { transform: translateY(0); }
-    .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    #start-btn {
+      width: 100%;
+      max-width: 300px;
+      letter-spacing: 0.04em;
+    }
+
+    /* "How to Use" on homepage — slightly softer */
+    #home-help-btn {
+      width: 100%;
+      max-width: 300px;
+      font-size: 1rem;
+      padding: 12px 24px;
+      opacity: 0.72;
+    }
+
+    #home-help-btn:hover { opacity: 1; }
 
     .status-hint {
-      margin-top: 18px;
+      margin-top: 22px;
       font-size: 0.8rem;
       color: var(--text-secondary);
       min-height: 1.2em;
     }
 
-    /* ── Help Button ── */
+    /* ── Floating Help Button (shown after sim starts) ── */
     #help-btn {
       position: fixed;
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 50;
-      display: none;
+      display: none;          /* JS shows it after launch */
+      font-size: 0.95rem;
       padding: 12px 28px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(var(--glass-blur));
-      -webkit-backdrop-filter: blur(var(--glass-blur));
-      border: 1px solid var(--glass-border);
-      border-top-color: var(--glass-highlight);
-      border-radius: 50px;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
-      white-space: nowrap;
-      -webkit-appearance: none;
-      touch-action: manipulation;
-      min-height: 44px;
     }
-
-    #help-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
 
     /* ── Help Modal ── */
     #help-modal-backdrop {
@@ -262,25 +285,15 @@
 
     .key-desc { font-size: 0.8rem; color: var(--text-secondary); }
 
-    .close-btn {
+    /* Close button fills the modal width */
+    #close-help-btn {
       margin-top: 24px;
       width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-      border: none;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      min-height: 44px;
-      touch-action: manipulation;
+      border-radius: 16px;
+      font-size: 0.95rem;
     }
 
-    .close-btn:hover { opacity: 0.88; }
-
-    /* ── Server Down ── */
+    /* ── Server Down Screen ── */
     #server-down-screen {
       display: none;
       position: fixed;
@@ -296,7 +309,7 @@
 
     #server-down-screen.active { display: flex; }
 
-    .down-icon  { font-size: 64px; margin-bottom: 24px; }
+    .down-icon { font-size: 64px; margin-bottom: 24px; }
 
     .down-title {
       font-size: clamp(1.6rem, 5vw, 2rem);
@@ -359,18 +372,24 @@
   <canvas id="three-canvas"></canvas>
   <video id="webcam" autoplay playsinline muted></video>
 
-  <!-- Launch Overlay -->
+  <!-- ── Launch Overlay ── -->
   <div id="launch-overlay">
     <div class="launch-card glass">
       <h1 class="title-text">God Simulator</h1>
-      <button class="start-btn" id="start-btn">Start Simulator</button>
+
+      <div class="launch-btns">
+        <button class="boton-elegante" id="start-btn">Start Simulator</button>
+        <button class="boton-elegante" id="home-help-btn">How to Use</button>
+      </div>
+
       <p class="status-hint" id="status-hint">Awaiting your command</p>
     </div>
   </div>
 
-  <button id="help-btn">How to Use</button>
+  <!-- ── Floating Help Button (after sim launches) ── -->
+  <button class="boton-elegante" id="help-btn">How to Use</button>
 
-  <!-- Help Modal -->
+  <!-- ── Help Modal ── -->
   <div id="help-modal-backdrop">
     <div class="help-modal glass">
       <h2 class="modal-title">✋ Hand Gesture Guide</h2>
@@ -379,7 +398,7 @@
         <div class="gesture-icon">✊</div>
         <div class="gesture-info">
           <h4>FIST — Rotate Earth</h4>
-          <p>Make a full fist. Move your hand left or right to spin the planet from its current position. Rotation is relative — the Earth doesn't jump when you form the fist.</p>
+          <p>Make a full fist. Move your hand left or right to spin the planet from its current position. Rotation is relative — the Earth never jumps when you form the fist.</p>
         </div>
       </div>
 
@@ -387,7 +406,7 @@
         <div class="gesture-icon">☝️</div>
         <div class="gesture-info">
           <h4>INDEX ONLY — Scale Earth</h4>
-          <p>Extend only your index finger. Move right to grow, move left to shrink — relative to the size it was when you raised your finger.</p>
+          <p>Extend only your index finger. Move right to grow, move left to shrink — relative to the size the Earth was when you raised your finger.</p>
         </div>
       </div>
 
@@ -403,25 +422,16 @@
 
       <div class="manual-section">
         <h4>Keyboard Controls</h4>
-        <div class="key-row">
-          <kbd>H</kbd>
-          <span class="key-desc">Toggle this help panel</span>
-        </div>
-        <div class="key-row">
-          <kbd>Space</kbd>
-          <span class="key-desc">Pause / resume auto-spin</span>
-        </div>
-        <div class="key-row">
-          <kbd>R</kbd>
-          <span class="key-desc">Reset Earth scale &amp; rotation</span>
-        </div>
+        <div class="key-row"><kbd>H</kbd><span class="key-desc">Toggle this help panel</span></div>
+        <div class="key-row"><kbd>Space</kbd><span class="key-desc">Pause / resume auto-spin</span></div>
+        <div class="key-row"><kbd>R</kbd><span class="key-desc">Reset Earth scale &amp; rotation</span></div>
       </div>
 
-      <button class="close-btn" id="close-help-btn">Close</button>
+      <button class="boton-elegante" id="close-help-btn">Close</button>
     </div>
   </div>
 
-  <!-- Server Down Screen -->
+  <!-- ── Server Down Screen ── -->
   <div id="server-down-screen">
     <div class="down-icon">⚠️</div>
     <h2 class="down-title">Server Down</h2>
@@ -439,16 +449,14 @@
     "use strict";
 
     /* ── Config ── */
-    var NGROK_BASE        = "https://arise-ovary-fretful.ngrok-free.dev";
-    var NGROK_HEADERS     = {
-      "ngrok-skip-browser-warning": "true",
-      "Content-Type": "application/json"
-    };
+    var NGROK_BASE         = "https://arise-ovary-fretful.ngrok-free.dev";
+    var NGROK_HEADERS      = { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" };
     var UPLOAD_INTERVAL_MS = 1000;
 
     /* ── DOM refs ── */
     var launchOverlay    = document.getElementById("launch-overlay");
     var startBtn         = document.getElementById("start-btn");
+    var homeHelpBtn      = document.getElementById("home-help-btn");
     var statusHint       = document.getElementById("status-hint");
     var helpBtn          = document.getElementById("help-btn");
     var helpBackdrop     = document.getElementById("help-modal-backdrop");
@@ -458,37 +466,28 @@
     var webcam           = document.getElementById("webcam");
     var canvas           = document.getElementById("three-canvas");
 
-    /* ── State ── */
+    /* ── App State ── */
     var simRunning     = false;
     var autoPaused     = false;
     var currentGesture = "DEFAULT";
     var earth          = null;
     var baseScale      = 1.0;
 
-    /*
-     * FIST relative rotation
-     *   fistAnchorX   : hand X when the fist gesture was first detected
-     *   fistAnchorRotY: earth rotation.y at that moment
-     *   We add the hand delta (scaled) to the anchor rotation so the earth
-     *   NEVER jumps when the fist is formed.
-     */
-    var fistAnchorX    = null;
-    var fistAnchorRotY = 0;
-
-    /*
-     * INDEX relative scale
-     *   indexAnchorX    : hand X when index-only gesture was first detected
-     *   indexAnchorScale: targetScale (in normalised units) at that moment
-     *   Moving right increases scale; left decreases — relative to entry point.
-     */
+    /* Relative gesture anchors */
+    var fistAnchorX      = null;
+    var fistAnchorRotY   = 0;
     var indexAnchorX     = null;
     var indexAnchorScale = 1.0;
 
-    /* Live targets that the render loop lerps toward */
-    var targetRotY   = 0;
-    var targetScale  = 1.0;
+    /* Lerp targets */
+    var targetRotY  = 0;
+    var targetScale = 1.0;
 
-    /* ── Three.js Scene ── */
+    /* ──────────────────────────────────────────
+       Three.js Scene
+       Resize listener intentionally removed.
+       Renderer/camera are sized once at startup.
+    ────────────────────────────────────────── */
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -498,33 +497,27 @@
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0, 4);
 
-    window.addEventListener("resize", function () {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
+    /* Lighting */
     scene.add(new THREE.AmbientLight(0x555555));
-
     var sunLight = new THREE.DirectionalLight(0xffffff, 1.3);
     sunLight.position.set(5, 3, 5);
     sunLight.castShadow = true;
     scene.add(sunLight);
 
     /* ── Starfield ── */
-    (function buildStars() {
-      var COUNT     = 2000;
-      var positions = new Float32Array(COUNT * 3);
+    (function () {
+      var COUNT = 2000;
+      var pos   = new Float32Array(COUNT * 3);
       for (var i = 0; i < COUNT; i++) {
-        var idx = i * 3;
-        positions[idx]     = (Math.random() - 0.5) * 80;
-        positions[idx + 1] = (Math.random() - 0.5) * 80;
-        positions[idx + 2] = -(Math.random() * 25 + 5);
+        pos[i*3]   = (Math.random() - 0.5) * 80;
+        pos[i*3+1] = (Math.random() - 0.5) * 80;
+        pos[i*3+2] = -(Math.random() * 25 + 5);
       }
       var geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      var mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true });
-      scene.add(new THREE.Points(geo, mat));
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      scene.add(new THREE.Points(geo,
+        new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true })
+      ));
     })();
 
     /* ── Responsive base scale ── */
@@ -538,23 +531,21 @@
 
     /* ── Earth Loader ── */
     function loadEarth() {
-      var loader = new THREE.GLTFLoader();
-      loader.load(
+      new THREE.GLTFLoader().load(
         "earth.glb",
         function (gltf) {
           earth = gltf.scene;
 
-          /* Centre the model around the scene origin */
+          /* Centre */
           var box    = new THREE.Box3().setFromObject(earth);
           var center = new THREE.Vector3();
           box.getCenter(center);
           earth.position.sub(center);
 
-          /* Normalise so the largest axis fits within 2 units */
+          /* Normalise to 2 units */
           var size   = new THREE.Vector3();
           box.getSize(size);
-          var maxDim     = Math.max(size.x, size.y, size.z);
-          var normalizer = 2.0 / maxDim;
+          var normalizer = 2.0 / Math.max(size.x, size.y, size.z);
           earth.scale.setScalar(normalizer);
 
           baseScale   = computeBaseScale();
@@ -562,51 +553,34 @@
           earth.scale.setScalar(normalizer * baseScale);
           earth.userData.normalizer = normalizer;
 
-          /* FIX ─ Strip every Line / LineSegments / LineLoop from the model.
-             These are the blue wireframe edges baked into many GLTF exports
-             and are invisible in the authoring tool but visible in Three.js. */
+          /* Strip baked-in line geometry (blue edge artefacts) */
           var toRemove = [];
           earth.traverse(function (child) {
-            /* Hide any Line-type object (edges, wireframe helpers, etc.) */
             if (child.isLine || child.isLineSegments || child.isLineLoop) {
               toRemove.push(child);
               return;
             }
-
             if (child.isMesh) {
               child.castShadow    = true;
               child.receiveShadow = true;
-
-              /* Ensure no material has wireframe accidentally enabled */
               var mats = Array.isArray(child.material) ? child.material : [child.material];
               mats.forEach(function (m) {
-                if (m) {
-                  m.wireframe           = false;
-                  m.wireframeLinewidth  = 0;
-                }
+                if (m) { m.wireframe = false; m.wireframeLinewidth = 0; }
               });
             }
           });
-
-          /* Detach line children from their parents */
-          toRemove.forEach(function (obj) {
-            if (obj.parent) obj.parent.remove(obj);
-          });
+          toRemove.forEach(function (o) { if (o.parent) o.parent.remove(o); });
 
           scene.add(earth);
         },
         undefined,
         function (err) {
-          console.warn("earth.glb not found – using fallback sphere.", err);
-          var geo = new THREE.SphereGeometry(1, 64, 64);
-          var mat = new THREE.MeshPhongMaterial({
-            color: 0x1a6b9a,
-            specular: 0x333333,
-            shininess: 25,
-            wireframe: false
-          });
-          earth = new THREE.Mesh(geo, mat);
-          baseScale   = computeBaseScale();
+          console.warn("earth.glb not found – fallback sphere.", err);
+          earth = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 64, 64),
+            new THREE.MeshPhongMaterial({ color: 0x1a6b9a, specular: 0x333333, shininess: 25 })
+          );
+          baseScale = computeBaseScale();
           targetScale = baseScale;
           earth.scale.setScalar(baseScale);
           earth.userData.normalizer = 1;
@@ -620,42 +594,21 @@
     /* ── Render Loop ── */
     function animate() {
       requestAnimationFrame(animate);
-
       if (earth) {
         var norm = earth.userData.normalizer || 1;
-
         if (!simRunning) {
-          /* Idle spin before simulation starts */
           earth.rotation.y += 0.003;
-
         } else if (currentGesture === "FIST") {
-          /*
-           * FIX ─ Relative rotation.
-           * We lerp toward targetRotY which is computed as
-           * anchorRotY ± (handDelta * sensitivity).
-           * The earth never jumps because the anchor was captured
-           * at the exact rotation the earth had when the fist formed.
-           */
           earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotY, 0.12);
-
         } else if (currentGesture === "INDEX_ONLY") {
-          /*
-           * FIX ─ Relative scale.
-           * targetScale was updated in onHandResults relative to the scale
-           * the earth had when the index finger was first raised.
-           * We lerp toward it smoothly; earth also auto-spins gently.
-           */
           var curNorm  = earth.scale.x / norm;
           var nextNorm = THREE.MathUtils.lerp(curNorm, targetScale, 0.12);
           earth.scale.setScalar(norm * nextNorm);
           earth.rotation.y += 0.002;
-
         } else {
-          /* DEFAULT – auto spin (unless space-paused) */
           if (!autoPaused) earth.rotation.y += 0.002;
         }
       }
-
       renderer.render(scene, camera);
     }
 
@@ -663,33 +616,22 @@
 
     /* ── MediaPipe Hands ── */
     var hands = new Hands({
-      locateFile: function (file) {
-        return "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + file;
-      }
+      locateFile: function (f) { return "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + f; }
     });
-
-    hands.setOptions({
-      maxNumHands           : 1,
-      modelComplexity       : 1,
-      minDetectionConfidence: 0.7,
-      minTrackingConfidence : 0.6
-    });
-
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.6 });
     hands.onResults(onHandResults);
 
     function onHandResults(results) {
       if (!simRunning) return;
 
-      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-        /* No hand – reset anchors so next gesture starts fresh */
-        fistAnchorX   = null;
-        indexAnchorX  = null;
+      if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
+        fistAnchorX = null; indexAnchorX = null;
         setGesture("DEFAULT");
         return;
       }
 
       var lm   = results.multiHandLandmarks[0];
-      var rawX = lm[9].x; /* palm centre X — consistent reference point */
+      var rawX = lm[9].x;
 
       var indexFolded  = lm[8].y  > lm[5].y;
       var middleFolded = lm[12].y > lm[9].y;
@@ -697,114 +639,65 @@
       var pinkyFolded  = lm[20].y > lm[17].y;
 
       if (indexFolded && middleFolded && ringFolded && pinkyFolded) {
-        /* ── FIST ── */
-
-        /* Reset index anchor whenever we switch away from index mode */
+        /* ── FIST: anchor-relative rotation ── */
         indexAnchorX = null;
-
         if (fistAnchorX === null) {
-          /*
-           * First frame of fist: lock the anchor to the current hand position
-           * AND to the current rotation of the earth so there is zero jump.
-           */
           fistAnchorX    = rawX;
           fistAnchorRotY = earth ? earth.rotation.y : 0;
         }
-
-        /*
-         * Compute rotation target from delta.
-         * Hand moves left  (rawX decreases) → earth rotates right (+Y).
-         * Hand moves right (rawX increases) → earth rotates left  (-Y).
-         * Sensitivity multiplier (Math.PI * 4) means a full hand sweep
-         * across the frame gives ~2 full rotations.
-         */
-        var deltaX = fistAnchorX - rawX;
-        targetRotY = fistAnchorRotY + deltaX * Math.PI * 4;
-
+        targetRotY = fistAnchorRotY + (fistAnchorX - rawX) * Math.PI * 4;
         setGesture("FIST");
 
       } else if (!indexFolded && middleFolded && ringFolded && pinkyFolded) {
-        /* ── INDEX ONLY ── */
-
-        /* Reset fist anchor whenever we switch away from fist mode */
+        /* ── INDEX ONLY: anchor-relative scale ── */
         fistAnchorX = null;
-
         if (indexAnchorX === null) {
-          /*
-           * First frame of index: lock the anchor to the current hand position
-           * AND to the current scale so there is zero jump.
-           */
           indexAnchorX     = rawX;
-          indexAnchorScale = targetScale; /* carry whatever scale earth has now */
+          indexAnchorScale = targetScale;
         }
-
-        /*
-         * Moving right (rawX increases) → delta is negative (rawX - anchor < 0
-         * when anchor was set at a smaller rawX)... so we flip sign:
-         * newScale = anchorScale + (rawX - anchorX) * sensitivity
-         * Moving right → rawX increases → scale increases ✓
-         * Moving left  → rawX decreases → scale decreases ✓
-         */
-        var scaleDelta = (rawX - indexAnchorX) * 3.0;
-        targetScale    = Math.max(0.3, Math.min(3.5, indexAnchorScale + scaleDelta));
-
+        /* moving right (rawX↑) → bigger, moving left (rawX↓) → smaller */
+        targetScale = Math.max(0.3, Math.min(3.5, indexAnchorScale + (rawX - indexAnchorX) * 3.0));
         setGesture("INDEX_ONLY");
 
       } else {
-        /* ── DEFAULT ── */
-        fistAnchorX  = null;
-        indexAnchorX = null;
+        fistAnchorX = null; indexAnchorX = null;
         setGesture("DEFAULT");
       }
     }
 
     function setGesture(g) {
       currentGesture = g;
-      var labels = {
-        FIST       : "Rotate Mode",
-        INDEX_ONLY : "Scale Mode",
-        DEFAULT    : "Auto Spin"
-      };
-      gestureHUD.textContent = labels[g] || "Auto Spin";
+      gestureHUD.textContent = { FIST: "Rotate Mode", INDEX_ONLY: "Scale Mode", DEFAULT: "Auto Spin" }[g] || "Auto Spin";
       gestureHUD.classList.toggle("active-gesture", g !== "DEFAULT");
     }
 
     /* ── Init Pipeline ── */
     startBtn.addEventListener("click", async function () {
       startBtn.disabled = true;
+      homeHelpBtn.disabled = true;
       statusHint.textContent = "Pinging server...";
 
       try {
-        var resp = await fetch(NGROK_BASE + "/ping", {
-          method : "GET",
-          headers: { "ngrok-skip-browser-warning": "true" }
-        });
-        if (!resp.ok) throw new Error("Non-OK ping");
-      } catch (err) {
-        console.error("Server unreachable:", err);
+        var r = await fetch(NGROK_BASE + "/ping", { method: "GET", headers: { "ngrok-skip-browser-warning": "true" } });
+        if (!r.ok) throw new Error("bad ping");
+      } catch (e) {
         serverDownScreen.classList.add("active");
         return;
       }
 
       statusHint.textContent = "Requesting camera...";
-
       var stream;
       try {
-        var constraints = {
-          video: {
-            facingMode: "user",
-            width : { ideal: 1280 },
-            height: { ideal: 720  }
-          }
-        };
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
         webcam.srcObject = stream;
         await new Promise(function (res) { webcam.onloadedmetadata = res; });
         await webcam.play();
-      } catch (err) {
-        console.error("Camera denied:", err);
+      } catch (e) {
         statusHint.textContent = "Camera access denied.";
-        startBtn.disabled = false;
+        startBtn.disabled    = false;
+        homeHelpBtn.disabled = false;
         return;
       }
 
@@ -821,14 +714,10 @@
     });
 
     function startMediaPipe() {
-      var mpCamera = new Camera(webcam, {
-        onFrame: async function () {
-          await hands.send({ image: webcam });
-        },
-        width : 640,
-        height: 480
-      });
-      mpCamera.start();
+      new Camera(webcam, {
+        onFrame: async function () { await hands.send({ image: webcam }); },
+        width: 640, height: 480
+      }).start();
     }
 
     function startUploadLoop(stream) {
@@ -836,65 +725,45 @@
       var settings = track ? track.getSettings() : {};
       var camW     = settings.width  || webcam.videoWidth  || 640;
       var camH     = settings.height || webcam.videoHeight || 480;
-
-      var offCanvas   = document.createElement("canvas");
-      offCanvas.width  = camW;
-      offCanvas.height = camH;
-      var ctx = offCanvas.getContext("2d");
+      var off      = document.createElement("canvas");
+      off.width    = camW; off.height = camH;
+      var ctx      = off.getContext("2d");
 
       setInterval(async function () {
-        if (!simRunning) return;
-        if (webcam.readyState < 2) return;
-
+        if (!simRunning || webcam.readyState < 2) return;
         try {
           ctx.drawImage(webcam, 0, 0, camW, camH);
-          var base64Image = offCanvas.toDataURL("image/jpeg", 0.85);
-
           await fetch(NGROK_BASE + "/upload", {
-            method : "POST",
-            headers: NGROK_HEADERS,
-            body   : JSON.stringify({ image: base64Image })
+            method: "POST", headers: NGROK_HEADERS,
+            body: JSON.stringify({ image: off.toDataURL("image/jpeg", 0.85) })
           });
-        } catch (err) {
-          console.warn("Frame upload failed:", err);
-        }
+        } catch (e) { console.warn("Frame upload failed:", e); }
       }, UPLOAD_INTERVAL_MS);
     }
 
-    /* ── UI events ── */
-    helpBtn.addEventListener("click", function () {
-      helpBackdrop.classList.add("open");
-    });
+    /* ── UI Events ── */
+    function openHelp()  { helpBackdrop.classList.add("open");    }
+    function closeHelp() { helpBackdrop.classList.remove("open"); }
 
-    closeHelpBtn.addEventListener("click", function () {
-      helpBackdrop.classList.remove("open");
-    });
-
-    helpBackdrop.addEventListener("click", function (e) {
-      if (e.target === helpBackdrop) helpBackdrop.classList.remove("open");
-    });
+    homeHelpBtn.addEventListener("click", openHelp);
+    helpBtn.addEventListener("click", openHelp);
+    closeHelpBtn.addEventListener("click", closeHelp);
+    helpBackdrop.addEventListener("click", function (e) { if (e.target === helpBackdrop) closeHelp(); });
 
     window.addEventListener("keydown", function (e) {
       switch (e.key.toLowerCase()) {
-        case "h":
-          helpBackdrop.classList.toggle("open");
-          break;
-
+        case "h": helpBackdrop.classList.toggle("open"); break;
         case " ":
           e.preventDefault();
           autoPaused = !autoPaused;
           break;
-
         case "r":
           if (earth) {
             earth.rotation.set(0, 0, 0);
-            baseScale   = computeBaseScale();
+            baseScale = computeBaseScale();
             targetScale = baseScale;
-            var norm    = earth.userData.normalizer || 1;
-            earth.scale.setScalar(norm * baseScale);
-            targetRotY    = 0;
-            fistAnchorX   = null;
-            indexAnchorX  = null;
+            earth.scale.setScalar((earth.userData.normalizer || 1) * baseScale);
+            targetRotY = 0; fistAnchorX = null; indexAnchorX = null;
           }
           break;
       }
