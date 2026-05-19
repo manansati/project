@@ -2,23 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>God Simulator</title>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       DEPENDENCIES — loaded as plain global <script> tags.
-       NO ES modules, NO import maps. This prevents the bare-specifier
-       crash and mixed-content blocks on GitHub Pages.
-  ════════════════════════════════════════════════════════════════ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- GLTFLoader for r128 — injects itself into the global THREE object -->
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
-  <!-- MediaPipe Hands & Camera Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
   <style>
-    /* ── Reset & Viewport Lock ─────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -35,32 +27,34 @@
     }
 
     html, body {
-      width: 100vw; height: 100vh;
+      width: 100%; height: 100%;
       overflow: hidden;
       background: var(--space);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       color: var(--text-primary);
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Three.js Canvas ───────────────────────────────────────────── */
     #three-canvas {
       position: fixed;
       inset: 0;
       z-index: 0;
       display: block;
+      width: 100% !important;
+      height: 100% !important;
     }
 
-    /* ── Hidden Camera Feed ────────────────────────────────────────── */
     #webcam {
       position: fixed;
-      top: 0; left: 0;
-      width: 1px; height: 1px;
+      top: -9999px;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
       opacity: 0;
       pointer-events: none;
-      z-index: -1;
     }
 
-    /* ── Glass Panel Mixin ─────────────────────────────────────────── */
     .glass {
       background: var(--glass-bg);
       backdrop-filter: blur(var(--glass-blur));
@@ -71,9 +65,6 @@
       border-radius: 20px;
     }
 
-    /* ══════════════════════════════════════════════════════════════
-       LAUNCH OVERLAY
-    ══════════════════════════════════════════════════════════════ */
     #launch-overlay {
       position: fixed;
       inset: 0;
@@ -93,124 +84,65 @@
     }
 
     .launch-card {
-      max-width: 480px;
-      width: 90vw;
-      padding: 52px 44px 48px;
+      max-width: 440px;
+      width: 88vw;
+      padding: 48px 40px 44px;
       text-align: center;
       position: relative;
-      overflow: hidden;
-    }
-
-    /* Subtle animated aurora behind the card */
-    .launch-card::before {
-      content: '';
-      position: absolute;
-      inset: -40px;
-      background: conic-gradient(
-        from 0deg at 50% 50%,
-        transparent 0deg,
-        rgba(79, 195, 247, 0.07) 60deg,
-        transparent 120deg,
-        rgba(167, 139, 250, 0.07) 180deg,
-        transparent 240deg,
-        rgba(79, 195, 247, 0.04) 300deg,
-        transparent 360deg
-      );
-      animation: auroraRotate 8s linear infinite;
-      border-radius: inherit;
-      z-index: -1;
-    }
-
-    @keyframes auroraRotate {
-      to { transform: rotate(360deg); }
-    }
-
-    .god-symbol {
-      font-size: 56px;
-      line-height: 1;
-      margin-bottom: 24px;
-      filter: drop-shadow(0 0 18px rgba(79, 195, 247, 0.5));
-      animation: symbolPulse 3s ease-in-out infinite;
-    }
-
-    @keyframes symbolPulse {
-      0%, 100% { filter: drop-shadow(0 0 18px rgba(79, 195, 247, 0.5)); }
-      50%       { filter: drop-shadow(0 0 32px rgba(167, 139, 250, 0.7)); }
     }
 
     .title-text {
-      font-size: 2.6rem;
+      font-size: clamp(2rem, 6vw, 2.6rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 10px;
-    }
-
-    .subtitle-text {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 40px;
+      margin-bottom: 32px;
     }
 
     .start-btn {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
       padding: 16px 44px;
       background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
       border: none;
       border-radius: 50px;
       color: #fff;
-      font-size: 1rem;
+      font-size: clamp(0.9rem, 3vw, 1rem);
       font-weight: 700;
       letter-spacing: 0.04em;
       cursor: pointer;
       position: relative;
-      overflow: hidden;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 8px 32px rgba(79, 195, 247, 0.3);
+      -webkit-appearance: none;
+      touch-action: manipulation;
+      min-height: 52px;
+      min-width: 180px;
     }
 
-    .start-btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0);
-      transition: background 0.2s;
-      border-radius: inherit;
-    }
-
-    .start-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 40px rgba(79, 195, 247, 0.45);
-    }
-
-    .start-btn:hover::after { background: rgba(255,255,255,0.08); }
+    .start-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(79, 195, 247, 0.45); }
     .start-btn:active { transform: translateY(0); }
+    .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .status-hint {
-      margin-top: 20px;
-      font-size: 0.78rem;
+      margin-top: 18px;
+      font-size: 0.8rem;
       color: var(--text-secondary);
       min-height: 1.2em;
     }
 
-    /* ══════════════════════════════════════════════════════════════
-       BOTTOM HELP BUTTON (always visible during simulation)
-    ══════════════════════════════════════════════════════════════ */
     #help-btn {
       position: fixed;
-      bottom: 28px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 50;
-      display: none;        /* shown after sim starts */
-      padding: 11px 28px;
+      display: none;
+      padding: 12px 28px;
       background: var(--glass-bg);
       backdrop-filter: blur(var(--glass-blur));
       -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -223,16 +155,13 @@
       cursor: pointer;
       transition: color 0.2s, border-color 0.2s;
       white-space: nowrap;
+      -webkit-appearance: none;
+      touch-action: manipulation;
+      min-height: 44px;
     }
 
-    #help-btn:hover {
-      color: var(--text-primary);
-      border-color: rgba(255,255,255,0.2);
-    }
+    #help-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
 
-    /* ══════════════════════════════════════════════════════════════
-       HOW-TO-USE MODAL
-    ══════════════════════════════════════════════════════════════ */
     #help-modal-backdrop {
       display: none;
       position: fixed;
@@ -243,54 +172,54 @@
       -webkit-backdrop-filter: blur(6px);
       align-items: center;
       justify-content: center;
+      padding: 16px;
     }
 
-    #help-modal-backdrop.open {
-      display: flex;
-    }
+    #help-modal-backdrop.open { display: flex; }
 
     .help-modal {
-      max-width: 520px;
-      width: 90vw;
-      padding: 40px 36px 36px;
+      max-width: 500px;
+      width: 100%;
+      padding: 36px 32px 32px;
       position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .modal-title {
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       font-weight: 700;
       background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 26px;
+      margin-bottom: 24px;
     }
 
     .gesture-row {
       display: flex;
       align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 20px;
+      gap: 14px;
+      margin-bottom: 18px;
     }
 
     .gesture-icon {
-      font-size: 2rem;
+      font-size: 1.8rem;
       line-height: 1;
       flex-shrink: 0;
-      width: 48px;
+      width: 44px;
       text-align: center;
-      filter: drop-shadow(0 0 8px rgba(79, 195, 247, 0.4));
     }
 
     .gesture-info h4 {
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 4px;
     }
 
     .gesture-info p {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--text-secondary);
       line-height: 1.5;
     }
@@ -298,23 +227,23 @@
     .divider {
       border: none;
       border-top: 1px solid var(--glass-border);
-      margin: 22px 0;
+      margin: 20px 0;
     }
 
     .manual-section h4 {
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--text-secondary);
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .key-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     kbd {
@@ -323,15 +252,15 @@
       border-radius: 6px;
       padding: 3px 10px;
       font-family: monospace;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--text-primary);
       white-space: nowrap;
     }
 
-    .key-desc { font-size: 0.82rem; color: var(--text-secondary); }
+    .key-desc { font-size: 0.8rem; color: var(--text-secondary); }
 
     .close-btn {
-      margin-top: 28px;
+      margin-top: 24px;
       width: 100%;
       padding: 12px;
       background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
@@ -342,13 +271,12 @@
       font-weight: 700;
       cursor: pointer;
       transition: opacity 0.2s;
+      min-height: 44px;
+      touch-action: manipulation;
     }
 
     .close-btn:hover { opacity: 0.88; }
 
-    /* ══════════════════════════════════════════════════════════════
-       SERVER DOWN OVERLAY
-    ══════════════════════════════════════════════════════════════ */
     #server-down-screen {
       display: none;
       position: fixed;
@@ -362,38 +290,30 @@
       padding: 32px;
     }
 
-    #server-down-screen.active {
-      display: flex;
-    }
+    #server-down-screen.active { display: flex; }
 
     .down-icon {
-      font-size: 72px;
-      margin-bottom: 28px;
-      animation: shake 0.5s ease infinite alternate;
-    }
-
-    @keyframes shake {
-      from { transform: rotate(-4deg) scale(1); }
-      to   { transform: rotate(4deg)  scale(1.06); }
+      font-size: 64px;
+      margin-bottom: 24px;
     }
 
     .down-title {
-      font-size: 2rem;
+      font-size: clamp(1.6rem, 5vw, 2rem);
       font-weight: 800;
       color: var(--danger);
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       text-shadow: 0 0 30px rgba(255, 71, 87, 0.5);
     }
 
     .down-sub {
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: var(--text-secondary);
-      max-width: 360px;
+      max-width: 340px;
       line-height: 1.6;
     }
 
     .down-badge {
-      margin-top: 28px;
+      margin-top: 24px;
       display: inline-block;
       padding: 10px 24px;
       border: 1px solid var(--danger);
@@ -404,28 +324,26 @@
       letter-spacing: 0.06em;
     }
 
-    /* ══════════════════════════════════════════════════════════════
-       HUD — gesture indicator (top-right, shown during sim)
-    ══════════════════════════════════════════════════════════════ */
     #gesture-hud {
       display: none;
       position: fixed;
-      top: 24px;
-      right: 28px;
+      top: 20px;
+      right: 20px;
       z-index: 50;
-      padding: 10px 20px;
+      padding: 10px 18px;
       background: var(--glass-bg);
       backdrop-filter: blur(var(--glass-blur));
       -webkit-backdrop-filter: blur(var(--glass-blur));
       border: 1px solid var(--glass-border);
       border-top-color: var(--glass-highlight);
       border-radius: 50px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-secondary);
       letter-spacing: 0.06em;
       text-transform: uppercase;
       transition: color 0.3s;
+      pointer-events: none;
     }
 
     #gesture-hud.active-gesture {
@@ -436,35 +354,19 @@
 </head>
 <body>
 
-  <!-- ── Three.js Canvas ──────────────────────────────────────────── -->
   <canvas id="three-canvas"></canvas>
-
-  <!-- ── Hidden Webcam Video ──────────────────────────────────────── -->
   <video id="webcam" autoplay playsinline muted></video>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       LAUNCH OVERLAY
-  ═══════════════════════════════════════════════════════════════ -->
   <div id="launch-overlay">
     <div class="launch-card glass">
-      <div class="god-symbol">🌍</div>
       <h1 class="title-text">God Simulator</h1>
-      <p class="subtitle-text">Hand-Gesture Earth Control</p>
-      <button class="start-btn" id="start-btn">
-        ⚡ Start Simulator
-      </button>
-      <p class="status-hint" id="status-hint">Awaiting your command…</p>
+      <button class="start-btn" id="start-btn">Start Simulator</button>
+      <p class="status-hint" id="status-hint">Awaiting your command</p>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       BOTTOM HELP BUTTON
-  ═══════════════════════════════════════════════════════════════ -->
-  <button id="help-btn">☰ How to Use</button>
+  <button id="help-btn">How to Use</button>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       HOW-TO-USE MODAL
-  ═══════════════════════════════════════════════════════════════ -->
   <div id="help-modal-backdrop">
     <div class="help-modal glass">
       <h2 class="modal-title">✋ Hand Gesture Guide</h2>
@@ -473,7 +375,7 @@
         <div class="gesture-icon">✊</div>
         <div class="gesture-info">
           <h4>FIST — Rotate Earth</h4>
-          <p>Make a full fist. Move your hand left/right to spin the planet. Freeze your fist to stop rotation instantly.</p>
+          <p>Make a full fist. Move your hand left or right to spin the planet. Freeze your fist to stop rotation instantly.</p>
         </div>
       </div>
 
@@ -481,7 +383,7 @@
         <div class="gesture-icon">☝️</div>
         <div class="gesture-info">
           <h4>INDEX ONLY — Scale Earth</h4>
-          <p>Extend only your index finger. Move left to shrink the planet (0.6×), move right to expand it (3×).</p>
+          <p>Extend only your index finger. Move left to shrink the planet, move right to expand it.</p>
         </div>
       </div>
 
@@ -515,9 +417,6 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       SERVER DOWN SCREEN
-  ═══════════════════════════════════════════════════════════════ -->
   <div id="server-down-screen">
     <div class="down-icon">⚠️</div>
     <h2 class="down-title">Server Down</h2>
@@ -528,68 +427,54 @@
     <span class="down-badge">Please Contact Manan</span>
   </div>
 
-  <!-- ── Gesture HUD ───────────────────────────────────────────────── -->
   <div id="gesture-hud">No Hand</div>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       MAIN SCRIPT
-  ═══════════════════════════════════════════════════════════════ -->
   <script>
   (function () {
     "use strict";
 
-    /* ── Config ──────────────────────────────────────────────────── */
     const NGROK_BASE = "https://arise-ovary-fretful.ngrok-free.dev";
     const NGROK_HEADERS = {
       "ngrok-skip-browser-warning": "true",
       "Content-Type": "application/json"
     };
     const UPLOAD_INTERVAL_MS = 1000;
-    const CAM_W = 640, CAM_H = 480;
 
-    /* ── DOM Refs ────────────────────────────────────────────────── */
-    const launchOverlay   = document.getElementById("launch-overlay");
-    const startBtn        = document.getElementById("start-btn");
-    const statusHint      = document.getElementById("status-hint");
-    const helpBtn         = document.getElementById("help-btn");
-    const helpBackdrop    = document.getElementById("help-modal-backdrop");
-    const closeHelpBtn    = document.getElementById("close-help-btn");
-    const serverDownScreen= document.getElementById("server-down-screen");
-    const gestureHUD      = document.getElementById("gesture-hud");
-    const webcam          = document.getElementById("webcam");
-    const canvas          = document.getElementById("three-canvas");
+    const launchOverlay    = document.getElementById("launch-overlay");
+    const startBtn         = document.getElementById("start-btn");
+    const statusHint       = document.getElementById("status-hint");
+    const helpBtn          = document.getElementById("help-btn");
+    const helpBackdrop     = document.getElementById("help-modal-backdrop");
+    const closeHelpBtn     = document.getElementById("close-help-btn");
+    const serverDownScreen = document.getElementById("server-down-screen");
+    const gestureHUD       = document.getElementById("gesture-hud");
+    const webcam           = document.getElementById("webcam");
+    const canvas           = document.getElementById("three-canvas");
 
-    /* ── State ───────────────────────────────────────────────────── */
-    let simRunning   = false;
-    let autoPaused   = false;
+    let simRunning     = false;
+    let autoPaused     = false;
     let currentGesture = "DEFAULT";
-
-    // Earth Three.js state
     let earth          = null;
     let targetRotY     = 0;
     let targetScale    = 1.0;
+    let baseScale      = 1.0;
 
-    /* ════════════════════════════════════════════════════════════
-       1.  THREE.JS SCENE BOOTSTRAP
-    ══════════════════════════════════════════════════════════ */
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    /* ── Three.js Scene ── */
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
 
-    const scene = new THREE.Scene();
-
+    const scene  = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 3.5);
+    camera.position.set(0, 0, 4);
 
-    // Resize handler — recalculates aspect to prevent planetary distortion
-    window.addEventListener("resize", () => {
+    window.addEventListener("resize", function () {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    /* ── Lighting ────────────────────────────────────────────────── */
     const ambientLight = new THREE.AmbientLight(0x555555);
     scene.add(ambientLight);
 
@@ -598,36 +483,51 @@
     sunLight.castShadow = true;
     scene.add(sunLight);
 
-    /* ── Starfield ───────────────────────────────────────────────── */
     (function buildStars() {
-      const COUNT = 2000;
-      const positions = new Float32Array(COUNT * 3);
-      for (let i = 0; i < COUNT; i++) {
-        const idx = i * 3;
-        positions[idx]     = (Math.random() - 0.5) * 80;  // X: wide spread
-        positions[idx + 1] = (Math.random() - 0.5) * 80;  // Y: wide spread
-        // Z: strictly deep (between -5 and -30) so stars never clip the planet
+      var COUNT = 2000;
+      var positions = new Float32Array(COUNT * 3);
+      for (var i = 0; i < COUNT; i++) {
+        var idx = i * 3;
+        positions[idx]     = (Math.random() - 0.5) * 80;
+        positions[idx + 1] = (Math.random() - 0.5) * 80;
         positions[idx + 2] = -(Math.random() * 25 + 5);
       }
-      const geo  = new THREE.BufferGeometry();
+      var geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      const mat  = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true });
+      var mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true });
       scene.add(new THREE.Points(geo, mat));
     })();
 
-    /* ── Earth GLB Loader ────────────────────────────────────────── */
+    function computeBaseScale() {
+      var vmin = Math.min(window.innerWidth, window.innerHeight);
+      if (vmin < 400) return 0.65;
+      if (vmin < 600) return 0.8;
+      if (vmin < 900) return 1.0;
+      return 1.2;
+    }
+
     function loadEarth() {
-      const loader = new THREE.GLTFLoader();
+      var loader = new THREE.GLTFLoader();
       loader.load(
         "earth.glb",
         function (gltf) {
           earth = gltf.scene;
 
-          // Centre the mesh around the scene origin using bounding-box math
-          const box    = new THREE.Box3().setFromObject(earth);
-          const center = new THREE.Vector3();
+          var box = new THREE.Box3().setFromObject(earth);
+          var center = new THREE.Vector3();
           box.getCenter(center);
-          earth.position.sub(center);   // offset so mass = (0,0,0)
+          earth.position.sub(center);
+
+          var size = new THREE.Vector3();
+          box.getSize(size);
+          var maxDim = Math.max(size.x, size.y, size.z);
+          var normalizer = 2.0 / maxDim;
+          earth.scale.setScalar(normalizer);
+
+          baseScale  = computeBaseScale();
+          targetScale = baseScale;
+          earth.scale.setScalar(normalizer * baseScale);
+          earth.userData.normalizer = normalizer;
 
           earth.traverse(function (child) {
             if (child.isMesh) {
@@ -640,15 +540,14 @@
         },
         undefined,
         function (err) {
-          console.warn("[GLTFLoader] earth.glb not found — using procedural fallback.", err);
-          // Procedural Earth sphere fallback so the sim still works without the asset
-          const geo  = new THREE.SphereGeometry(1, 64, 64);
-          const mat  = new THREE.MeshPhongMaterial({
-            color: 0x1a6b9a,
-            specular: 0x333333,
-            shininess: 25
-          });
+          console.warn("earth.glb not found, using fallback sphere.", err);
+          var geo = new THREE.SphereGeometry(1, 64, 64);
+          var mat = new THREE.MeshPhongMaterial({ color: 0x1a6b9a, specular: 0x333333, shininess: 25 });
           earth = new THREE.Mesh(geo, mat);
+          baseScale  = computeBaseScale();
+          targetScale = baseScale;
+          earth.scale.setScalar(baseScale);
+          earth.userData.normalizer = 1;
           scene.add(earth);
         }
       );
@@ -656,34 +555,23 @@
 
     loadEarth();
 
-    /* ── Render Loop ─────────────────────────────────────────────── */
     function animate() {
       requestAnimationFrame(animate);
 
       if (earth) {
+        var norm = earth.userData.normalizer || 1;
         if (!simRunning) {
-          // Idle gentle spin while on launch screen
-          earth.rotation.y += 0.002;
+          earth.rotation.y += 0.003;
         } else {
-          switch (currentGesture) {
-            case "FIST":
-              // Lerp toward target set by hand X position
-              earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotY, 0.15);
-              break;
-
-            case "INDEX_ONLY":
-              // Lerp scale toward hand-mapped target
-              earth.scale.setScalar(
-                THREE.MathUtils.lerp(earth.scale.x, targetScale, 0.15)
-              );
-              // Continue gentle auto-spin while scaling
-              earth.rotation.y += 0.002;
-              break;
-
-            case "DEFAULT":
-            default:
-              if (!autoPaused) earth.rotation.y += 0.002;
-              break;
+          if (currentGesture === "FIST") {
+            earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetRotY, 0.12);
+          } else if (currentGesture === "INDEX_ONLY") {
+            var cur = earth.scale.x / norm;
+            var next = THREE.MathUtils.lerp(cur, targetScale, 0.12);
+            earth.scale.setScalar(norm * next);
+            earth.rotation.y += 0.002;
+          } else {
+            if (!autoPaused) earth.rotation.y += 0.002;
           }
         }
       }
@@ -693,12 +581,10 @@
 
     animate();
 
-    /* ════════════════════════════════════════════════════════════
-       2.  MEDIAPIPE HANDS SETUP
-    ══════════════════════════════════════════════════════════ */
-    const hands = new Hands({
+    /* ── MediaPipe Hands ── */
+    var hands = new Hands({
       locateFile: function (file) {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        return "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + file;
       }
     });
 
@@ -719,27 +605,21 @@
         return;
       }
 
-      const lm = results.multiHandLandmarks[0];
+      var lm = results.multiHandLandmarks[0];
 
-      // ── Finger fold detection (tip Y > MCP Y  →  finger is folded) ──
-      const indexFolded  = lm[8].y  > lm[5].y;
-      const middleFolded = lm[12].y > lm[9].y;
-      const ringFolded   = lm[16].y > lm[13].y;
-      const pinkyFolded  = lm[20].y > lm[17].y;
-
-      const rawX = lm[9].x;   // palm centre horizontal
+      var indexFolded  = lm[8].y  > lm[5].y;
+      var middleFolded = lm[12].y > lm[9].y;
+      var ringFolded   = lm[16].y > lm[13].y;
+      var pinkyFolded  = lm[20].y > lm[17].y;
+      var rawX = lm[9].x;
 
       if (indexFolded && middleFolded && ringFolded && pinkyFolded) {
-        // ── FIST — Rotation Mode ──────────────────────────────────
         setGesture("FIST");
         targetRotY = (1 - rawX - 0.5) * Math.PI * 2;
-
       } else if (!indexFolded && middleFolded && ringFolded && pinkyFolded) {
-        // ── INDEX ONLY — Scale Mode ───────────────────────────────
         setGesture("INDEX_ONLY");
-        const t = 1 - rawX;                      // 0 (left) … 1 (right)
-        targetScale = 0.6 + t * (3.0 - 0.6);     // map to [0.6, 3.0]
-
+        var t = 1 - rawX;
+        targetScale = baseScale * (0.5 + t * 2.5);
       } else {
         setGesture("DEFAULT");
       }
@@ -747,56 +627,57 @@
 
     function setGesture(g) {
       currentGesture = g;
-      const labels = {
-        FIST       : "✊  Rotate Mode",
-        INDEX_ONLY : "☝️  Scale Mode",
-        DEFAULT    : "🖐️  Auto Spin"
+      var labels = {
+        FIST       : "Rotate Mode",
+        INDEX_ONLY : "Scale Mode",
+        DEFAULT    : "Auto Spin"
       };
-      gestureHUD.textContent = labels[g] || "—";
+      gestureHUD.textContent = labels[g] || "Auto Spin";
       gestureHUD.classList.toggle("active-gesture", g !== "DEFAULT");
     }
 
-    /* ════════════════════════════════════════════════════════════
-       3.  SINGLE-CLICK INIT PIPELINE
-    ══════════════════════════════════════════════════════════ */
+    /* ── Init Pipeline ── */
     startBtn.addEventListener("click", async function () {
       startBtn.disabled = true;
-      statusHint.textContent = "🔍 Pinging server…";
+      statusHint.textContent = "Pinging server...";
 
-      /* ── Step 1: Health Check ──────────────────────────────────── */
       try {
-        const resp = await fetch(NGROK_BASE + "/ping", {
+        var resp = await fetch(NGROK_BASE + "/ping", {
           method: "GET",
           headers: { "ngrok-skip-browser-warning": "true" }
         });
-        if (!resp.ok) throw new Error("Non-OK ping response");
+        if (!resp.ok) throw new Error("Non-OK ping");
       } catch (err) {
-        console.error("[PING] Server unreachable:", err);
+        console.error("Server unreachable:", err);
         serverDownScreen.classList.add("active");
         return;
       }
 
-      statusHint.textContent = "📷 Requesting camera…";
+      statusHint.textContent = "Requesting camera...";
 
-      /* ── Step 2: Camera Capture ────────────────────────────────── */
-      let stream;
+      var stream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: CAM_W, height: CAM_H }
-        });
+        var constraints = {
+          video: {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
         webcam.srcObject = stream;
-        await new Promise(res => { webcam.onloadedmetadata = res; });
+        await new Promise(function (res) { webcam.onloadedmetadata = res; });
+        await webcam.play();
       } catch (err) {
-        console.error("[CAMERA] Permission denied:", err);
-        statusHint.textContent = "❌ Camera access denied.";
+        console.error("Camera denied:", err);
+        statusHint.textContent = "Camera access denied.";
         startBtn.disabled = false;
         return;
       }
 
-      /* ── Step 3: Fade Out Overlay & Start Loops ────────────────── */
-      statusHint.textContent = "✅ Launching…";
+      statusHint.textContent = "Launching...";
       launchOverlay.classList.add("fade-out");
-      setTimeout(() => { launchOverlay.style.display = "none"; }, 650);
+      setTimeout(function () { launchOverlay.style.display = "none"; }, 650);
 
       helpBtn.style.display    = "block";
       gestureHUD.style.display = "block";
@@ -806,37 +687,35 @@
       startUploadLoop(stream);
     });
 
-    /* ════════════════════════════════════════════════════════════
-       4.  MEDIAPIPE CAMERA WRAPPER
-    ══════════════════════════════════════════════════════════ */
     function startMediaPipe() {
-      const mpCamera = new Camera(webcam, {
+      var mpCamera = new Camera(webcam, {
         onFrame: async function () {
           await hands.send({ image: webcam });
         },
-        width: CAM_W,
-        height: CAM_H
+        width: 640,
+        height: 480
       });
       mpCamera.start();
     }
 
-    /* ════════════════════════════════════════════════════════════
-       5.  BACKGROUND FRAME UPLOAD LOOP
-    ══════════════════════════════════════════════════════════ */
-    function startUploadLoop() {
-      // Off-screen canvas for frame extraction
-      const offCanvas = document.createElement("canvas");
-      offCanvas.width  = CAM_W;
-      offCanvas.height = CAM_H;
-      const ctx = offCanvas.getContext("2d");
+    function startUploadLoop(stream) {
+      var track = stream.getVideoTracks()[0];
+      var settings = track ? track.getSettings() : {};
+      var camW = settings.width  || webcam.videoWidth  || 640;
+      var camH = settings.height || webcam.videoHeight || 480;
+
+      var offCanvas = document.createElement("canvas");
+      offCanvas.width  = camW;
+      offCanvas.height = camH;
+      var ctx = offCanvas.getContext("2d");
 
       setInterval(async function () {
         if (!simRunning) return;
+        if (webcam.readyState < 2) return;
 
         try {
-          // Draw current webcam frame into off-screen canvas
-          ctx.drawImage(webcam, 0, 0, CAM_W, CAM_H);
-          const base64Image = offCanvas.toDataURL("image/jpeg", 0.7);
+          ctx.drawImage(webcam, 0, 0, camW, camH);
+          var base64Image = offCanvas.toDataURL("image/jpeg", 0.85);
 
           await fetch(NGROK_BASE + "/upload", {
             method: "POST",
@@ -844,28 +723,23 @@
             body: JSON.stringify({ image: base64Image })
           });
         } catch (err) {
-          // Silent fail — don't interrupt the simulation
-          console.warn("[UPLOAD] Frame upload failed:", err);
+          console.warn("Frame upload failed:", err);
         }
       }, UPLOAD_INTERVAL_MS);
     }
 
-    /* ════════════════════════════════════════════════════════════
-       6.  UI CONTROLS
-    ══════════════════════════════════════════════════════════ */
-
-    // Help Modal
-    helpBtn.addEventListener("click", () => {
+    helpBtn.addEventListener("click", function () {
       helpBackdrop.classList.add("open");
     });
-    closeHelpBtn.addEventListener("click", () => {
+
+    closeHelpBtn.addEventListener("click", function () {
       helpBackdrop.classList.remove("open");
     });
-    helpBackdrop.addEventListener("click", (e) => {
+
+    helpBackdrop.addEventListener("click", function (e) {
       if (e.target === helpBackdrop) helpBackdrop.classList.remove("open");
     });
 
-    // Keyboard shortcuts
     window.addEventListener("keydown", function (e) {
       switch (e.key.toLowerCase()) {
         case "h":
@@ -878,9 +752,11 @@
         case "r":
           if (earth) {
             earth.rotation.set(0, 0, 0);
-            earth.scale.setScalar(1);
-            targetScale = 1.0;
-            targetRotY  = 0;
+            baseScale  = computeBaseScale();
+            targetScale = baseScale;
+            var norm = earth.userData.normalizer || 1;
+            earth.scale.setScalar(norm * baseScale);
+            targetRotY = 0;
           }
           break;
       }
