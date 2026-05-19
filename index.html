@@ -14,7 +14,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #03030c; 
+            background-color: #010104; 
             color: #ffffff; 
             overflow: hidden; 
             height: 100vh;
@@ -23,65 +23,89 @@
 
         #server-down-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(4, 4, 12, 0.98); z-index: 9999;
+            background: rgba(2, 2, 8, 0.98); z-index: 9999;
             display: none; flex-direction: column; justify-content: center; align-items: center;
-            color: #ff4a4a; font-size: 2rem; font-weight: 700; text-align: center; padding: 20px;
+            color: #ff3333; font-size: 2.2rem; font-weight: 800; text-align: center; padding: 20px;
+            letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 20px rgba(255, 51, 51, 0.5);
         }
 
+        /* ----- PREMIUM GLASSMORPHISM UI ----- */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 100; display: flex; flex-direction: column; justify-content: center; 
             align-items: center; 
-            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.2) 0%, rgba(3, 3, 12, 0.85) 100%);
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.1) 0%, rgba(1, 1, 4, 0.9) 100%);
+            transition: opacity 0.8s ease;
         }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 50px 60px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            padding: 60px 80px;
             text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.02);
+            max-width: 90%;
         }
 
         h1 { 
-            font-size: 3.5rem; font-weight: 800; letter-spacing: 5px; margin-bottom: 35px; text-transform: uppercase; 
-            background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+            font-size: 4.2rem; font-weight: 900; letter-spacing: 8px; margin-bottom: 45px; text-transform: uppercase; 
+            background: linear-gradient(135deg, #ffffff 0%, #818cf8 50%, #4f46e5 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 15px rgba(79, 70, 229, 0.3));
         }
 
         .btn {
-            padding: 16px 45px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 50px;
-            cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 1.5px;
+            padding: 18px 55px; font-size: 1.15rem; font-weight: 700; border: none; border-radius: 50px;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; 
+            letter-spacing: 2px;
         }
 
         #btn-start { 
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white; 
-            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4); 
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.8) 0%, rgba(99, 102, 241, 0.8) 100%); 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            color: white; border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4), inset 0 2px 5px rgba(255,255,255,0.3); 
         }
-        #btn-start:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5); }
+        #btn-start:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6), inset 0 2px 5px rgba(255,255,255,0.4); 
+            background: linear-gradient(135deg, rgba(79, 70, 229, 1) 0%, rgba(99, 102, 241, 1) 100%);
+        }
 
         #btn-help { 
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1); color: white; z-index: 110; padding: 12px 30px; border-radius: 50px;
+            position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); 
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1; z-index: 110; padding: 14px 40px; border-radius: 50px;
+            font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        #btn-help:hover { background: rgba(255, 255, 255, 0.15); }
+        #btn-help:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.25); color: #fff; }
         
         #help-modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(10, 11, 28, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 24px; padding: 35px; width: 90%; max-width: 500px; z-index: 200; display: none;
+            background: rgba(10, 11, 28, 0.5); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-top: 1px solid rgba(255,255,255,0.3);
+            border-radius: 30px; padding: 45px; width: 90%; max-width: 550px; z-index: 200; display: none;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
         }
-        #help-modal h3 { margin-bottom: 20px; color: #a5b4fc; font-size: 1.6rem; }
-        #help-modal p { margin-bottom: 22px; line-height: 1.6; color: #e2e8f0; }
-        .close-btn { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; float: right; padding: 10px 24px; border-radius: 50px; }
-        .close-btn:hover { background: rgba(239, 68, 68, 0.4); color: white; }
+        #help-modal h3 { margin-bottom: 25px; color: #a5b4fc; font-size: 1.8rem; letter-spacing: 1px; }
+        #help-modal p { margin-bottom: 22px; line-height: 1.7; color: #e2e8f0; font-size: 1.05rem;}
+        .close-btn { 
+            background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); 
+            color: #fca5a5; float: right; padding: 12px 30px; border-radius: 50px; backdrop-filter: blur(10px);
+        }
+        .close-btn:hover { background: rgba(239, 68, 68, 0.4); color: white; border-color: rgba(239, 68, 68, 0.6); }
 
-        #webcam { position: absolute; bottom: 20px; left: 20px; width: 140px; height: 105px; transform: scaleX(-1); border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); z-index: 50; display: none; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top:0; left:0; z-index: 1; }
+        /* Hidden Webcam & Canvas setup */
+        #webcam { 
+            position: absolute; top: 0; left: 0; width: 1px; height: 1px; 
+            opacity: 0; pointer-events: none; z-index: -100; /* Completely hidden but functionally active */
+        }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top:0; left:0; z-index: 1; outline: none; }
         
         #debug-log { position: fixed; top: 10px; left: 10px; width: 300px; max-height: 100px; background: rgba(0,0,0,0.8); color: #ff5555; font-family: monospace; font-size: 11px; padding: 10px; z-index: 10000; border-radius: 5px; display: none; overflow-y: auto; pointer-events: none; }
     </style>
@@ -89,7 +113,7 @@
 <body>
 
     <div id="debug-log"></div>
-    <div id="server-down-screen">Server is Down, Please Contact Manan</div>
+    <div id="server-down-screen">Server Down<br><span style="font-size: 1rem; color: #fca5a5; margin-top: 10px; display: block;">Please Contact Manan</span></div>
 
     <div id="ui-layer">
         <div class="glass-panel">
@@ -104,7 +128,7 @@
         <h3>Manual Controls</h3>
         <p><strong>1. Fist Rotation (Y-Axis):</strong> Make a closed fist and move it horizontally across the screen to rotate the Earth. Hold it still to freeze the model in place.</p>
         <p><strong>2. Index Finger Scaling:</strong> Raise only your index finger. Move your hand left to shrink the Earth, or right to expand its scale dynamically.</p>
-        <p><em>Note: Other gestures let the Earth resume its real-life rotation.</em></p>
+        <p><em>Note: Other gestures let the Earth resume its natural rotation pattern.</em></p>
         <button class="close-btn btn" id="btn-close-help">Close</button>
     </div>
 
@@ -112,7 +136,7 @@
     <div id="canvas-container"></div>
 
     <script>
-        // Diagnostic fallback catch logger
+        // Diagnostic fallback
         window.onerror = function(msg, url, line) {
             const logBox = document.getElementById('debug-log');
             logBox.style.display = 'block';
@@ -130,12 +154,10 @@
         const serverDownScreen = document.getElementById('server-down-screen');
         const modal = document.getElementById('help-modal');
 
-        // Modal triggers
         document.getElementById('btn-help').addEventListener('click', function() { modal.style.display = 'block'; });
         document.getElementById('btn-close-help').addEventListener('click', function() { modal.style.display = 'none'; });
 
         async function startSimulator() {
-            // 1. Connection Validation Ping
             try {
                 const response = await fetch(`${BACKEND_URL}/ping`, { 
                     method: 'GET',
@@ -147,7 +169,6 @@
                 return;
             }
 
-            // 2. Access Webcam Arrays
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
                 video.srcObject = stream;
@@ -156,9 +177,11 @@
                 return;
             }
 
-            // 3. Close Menu View Layer
-            uiLayer.style.display = 'none';
-            video.style.display = 'block';
+            // Smoothly fade out the Glass UI
+            uiLayer.style.opacity = '0';
+            setTimeout(() => { uiLayer.style.display = 'none'; }, 800);
+            
+            // Note: Video element display logic removed, it remains opacity: 0
             isRunning = true;
             
             initMediaPipe();
@@ -171,7 +194,7 @@
             isRunning = false;
         }
 
-        // Initialize 3D Engine Frame
+        // Initialize 3D Scene
         function initThree() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
@@ -179,31 +202,40 @@
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 6;
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
             scene.add(new THREE.AmbientLight(0x555555));
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.3);
             sunLight.position.set(5, 3, 5);
             scene.add(sunLight);
 
-            // Mathematical background generator
+            // FIXED BACKGROUND STARS (Forcing Z-axis far behind the earth)
             const starsGeometry = new THREE.BufferGeometry();
-            const starsCount = 1500;
+            const starsCount = 2000;
             const starPositions = new Float32Array(starsCount * 3);
-            for(let i = 0; i < starsCount * 3; i++) {
-                starPositions[i] = (Math.random() - 0.5) * 15;
+            for(let i = 0; i < starsCount * 3; i += 3) {
+                starPositions[i] = (Math.random() - 0.5) * 40;       // X spread
+                starPositions[i+1] = (Math.random() - 0.5) * 40;     // Y spread
+                starPositions[i+2] = - (Math.random() * 25) - 5;     // Z depth (Always behind Earth: between -5 and -30)
             }
             starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-            const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.025 });
+            const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.03, transparent: true, opacity: 0.8 });
             const starField = new THREE.Points(starsGeometry, starsMaterial);
             scene.add(starField);
 
-            // Load Earth Mesh Model using standard object reference
             const loader = new THREE.GLTFLoader();
             loader.load('./earth.glb', function(gltf) {
                 earth = gltf.scene;
+
+                // MATHEMATICAL CENTERING: Forces the bounding box to perfectly align to scene origin (0,0,0)
+                const box = new THREE.Box3().setFromObject(earth);
+                const center = box.getCenter(new THREE.Vector3());
+                earth.position.x += (earth.position.x - center.x);
+                earth.position.y += (earth.position.y - center.y);
+                earth.position.z += (earth.position.z - center.z);
+
                 earth.scale.set(1.8, 1.8, 1.8);
                 scene.add(earth);
             }, undefined, function(error) {
@@ -213,7 +245,7 @@
             window.addEventListener('resize', onWindowResize);
         }
 
-        // Setup MediaPipe Hand Processing pipeline
+        // Initialize Tracking
         function initMediaPipe() {
             hands = new Hands({
                 locateFile: function(file) {
